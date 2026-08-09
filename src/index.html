@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Convert EPUB books into high-quality audiobooks with AI voices. Support for English and Hindi." />
+  <title>EPUB AI Audiobook Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/tokens.css" />
+  <link rel="stylesheet" href="./styles/primitives.css" />
+  <link rel="stylesheet" href="./styles/shell.css" />
+  <link rel="stylesheet" href="./styles/home.css" />
+  <link rel="stylesheet" href="./styles/workspace.css" />
+  <link rel="stylesheet" href="./styles/chapters.css" />
+  <link rel="stylesheet" href="./styles/player.css" />
+  <link rel="stylesheet" href="./styles/console.css" />
+  <link rel="stylesheet" href="./styles/index.css" />
+  <link rel="stylesheet" href="./styles/components.css" />
+  <link rel="stylesheet" href="./styles/animations.css" />
+</head>
+<body>
+  <div id="app" class="shell">
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="shell-header">
+      <div class="brand">
+        <button class="btn btn-ghost btn-icon sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+          </svg>
+        </div>
+        <span class="brand-name">AudioBook AI</span>
+
+        <!-- The current book is context for the whole screen, so it lives here
+             rather than in a panel that can scroll out of view. -->
+        <div class="header-book hidden" id="header-book">
+          <span class="header-book-title" id="header-book-title"></span>
+          <span class="badge" id="header-book-chapters"></span>
+          <!-- Closing a book is separate from adding one. They used to be the
+               same button, so wanting to upload a second book silently evicted
+               the one you were reading. -->
+          <button class="btn btn-ghost btn-icon btn-sm" id="btn-close-book"
+                  title="Close this book" aria-label="Close this book">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <nav class="segmented" role="tablist" aria-label="Views">
+          <button class="nav-btn" id="nav-home" data-view="home" role="tab" aria-selected="false">Home</button>
+          <button class="nav-btn" id="nav-create" data-view="create" role="tab" aria-selected="true">Workspace</button>
+          <button class="nav-btn" id="nav-library" data-view="library" role="tab" aria-selected="false">Library</button>
+        </nav>
+
+        <!--
+          Activity lives in the header, not in a floating bubble.
+
+          As a bubble it was pinned over whichever corner it occupied: on the
+          right it covered the player's speed and tone controls, on the left it
+          covered the sidebar's lowest card. Every "fix" was a different
+          collision, because a fixed overlay in a full-height layout has no
+          corner that is reliably empty.
+
+          In the header it cannot overlap anything by construction, and it is
+          still reachable from every view — which was the only real argument
+          for floating it. It keeps the error count and the red state, so a
+          failed conversion is still visible without opening the panel.
+        -->
+        <button class="btn btn-ghost btn-sm console-trigger" id="console-fab"
+                aria-expanded="false" aria-controls="console-panel" title="Activity log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span class="console-fab-label">Activity</span>
+          <span class="console-fab-count" id="log-count">0</span>
+        </button>
+
+        <button class="btn btn-secondary btn-sm" id="btn-new-book">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          New book
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+    <aside class="shell-sidebar" id="shell-sidebar">
+
+      <!--
+        Uploading has exactly one entry point now: the "New book" button in the
+        header, mirrored by the hero's button and the library's empty state,
+        all calling the same handler. There used to be a permanent drop-zone
+        card here *as well*, which meant the empty screen showed two different
+        ways to do the same thing side by side.
+
+        Nothing visible is lost: dropping a file anywhere on the page still
+        works, in every state, which is precisely what makes a dedicated drop
+        target unnecessary.
+      -->
+      <input type="file" id="file-input" accept=".epub" hidden />
+
+      <!--
+        Book overview — a compact card in the left column, not a full-width
+        banner. It was previously a wide block above the chapter list, which
+        spent the most valuable horizontal space in the app on information you
+        read once. As a card it keeps the whole content area for the chapter
+        list, which is the part that has to scale to a thousand rows.
+      -->
+      <section class="card book-card hidden" id="book-overview">
+        <div class="book-card-top">
+          <div class="book-overview-cover" id="book-overview-cover"></div>
+          <div class="book-card-id">
+            <h2 class="book-overview-title" id="book-overview-title"></h2>
+            <p class="book-overview-author" id="book-overview-author"></p>
+          </div>
+        </div>
+
+        <!-- A ring reads as "how far through am I" at a glance in a way a bar
+             in a stack of bars does not. -->
+        <div class="book-card-progress">
+          <div class="progress-ring" id="book-ring" role="img" aria-label="Conversion progress">
+            <svg viewBox="0 0 44 44" width="56" height="56" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="19" />
+              <circle class="ring-fill" id="book-ring-fill" cx="22" cy="22" r="19" />
+            </svg>
+            <span class="progress-ring-label" id="stat-progress">—</span>
+          </div>
+          <dl class="book-stats">
+            <div class="book-stat"><dt>Chapters</dt><dd id="stat-chapters">—</dd></div>
+            <div class="book-stat"><dt>Words</dt><dd id="stat-words">—</dd></div>
+            <div class="book-stat"><dt>Est. length</dt><dd id="stat-length">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="progress visually-hidden"><div class="progress-fill" id="book-overview-bar" style="width:0%"></div></div>
+        <span class="book-resume" id="book-resume" hidden></span>
+
+        <!--
+          The finished audiobook lives here rather than in its own permanent
+          sidebar panel. Previously it sat detached, with no book name on it,
+          offering to "build" something that could not exist yet — a control
+          that is always visible but only sometimes meaningful teaches people
+          to ignore it. Here it belongs to a book, and states why it is not
+          available yet when it is not.
+        -->
+        <div class="book-card-audiobook" id="audiobook-panel">
+          <div class="book-card-audiobook-meta">
+            <span id="ab-title">Complete audiobook</span>
+            <span class="text-3" id="ab-meta">Checking…</span>
+          </div>
+          <div class="row wrap" style="gap:var(--space-2)">
+            <button class="btn btn-secondary btn-sm" id="btn-build-audiobook" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M12 2v6m0 0l3-3m-3 3L9 5"/><path d="M4 14h16v6H4z"/>
+              </svg>
+              <span id="btn-build-label">Build</span>
+            </button>
+            <a class="btn btn-primary btn-sm" id="btn-download-all" hidden download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Progress appears IN PLACE, so starting a conversion never reflows
+           the page or pushes the chapter list out of view. -->
+      <section class="card hidden" id="section-progress" aria-live="polite">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Converting</div>
+            <div class="card-sub" id="progress-status-text">Preparing…</div>
+          </div>
+          <button class="btn btn-danger btn-sm" id="btn-cancel-all">Stop</button>
+        </div>
+        <div class="card-pad col" style="gap:var(--space-3)">
+          <div class="row-between text-sm">
+            <span class="text-2" id="overall-percent">0%</span>
+            <span class="text-3" id="overall-eta">Estimating…</span>
+          </div>
+          <div class="progress"><div class="progress-fill" id="overall-progress-bar" style="width:0%"></div></div>
+          <div class="chapter-progress-list" id="chapter-progress-list"></div>
+        </div>
+      </section>
+
+      <!--
+        Narration setup.
+
+        This was previously a permanently-open "Conversion defaults" form
+        asking for language, voice, style, model and an API key *before* the
+        user had heard anything — four technical decisions with no basis for
+        answering them. Now the common case is a single preset chip you can read at
+        a glance, and the form itself is collapsed behind it.
+      -->
+      <section class="card" id="section-convert">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Narration</div>
+            <div class="card-sub" id="preset-summary">Loading…</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-toggle-narration"
+                  aria-expanded="false" aria-controls="narration-fields">Change</button>
+        </div>
+
+        <div class="card-pad col" style="gap:var(--space-4)">
+          <!--
+            There is deliberately no Convert button here.
+            The sidebar button and the selection bar's button ran the *same*
+            function on the *same* selection, so the app appeared to offer two
+            different bulk conversions and neither said what it would produce.
+            Bulk conversion now lives in one place — the selection bar, which
+            appears next to the chapters it acts on. This card states the
+            settings those actions will use.
+          -->
+          <div class="narration-fields hidden" id="narration-fields">
+            <div class="field">
+              <label class="label" for="language-select">Output language</label>
+              <select id="language-select" class="select"></select>
+            </div>
+
+            <div class="field">
+              <label class="label" for="voice-select">Voice</label>
+              <select id="voice-select" class="select"></select>
+            </div>
+
+            <div class="field hidden" id="groq-config">
+              <label class="label" for="translation-style-select">Storytelling style</label>
+              <select id="translation-style-select" class="select"></select>
+
+              <!--
+                The model picker is a debugging control, not a creative one —
+                99% of conversions should never touch it — so it is collapsed
+                rather than presented alongside choices that shape the result.
+              -->
+              <details class="advanced">
+                <summary>Advanced</summary>
+                <label class="label" for="groq-model-select">AI model <span class="label-hint">optional</span></label>
+                <!-- Populated from /api/system/models — reachable models change
+                     over time, so hardcoding them guarantees eventual failures. -->
+                <select id="groq-model-select" class="select">
+                  <option value="">Auto (best available)</option>
+                </select>
+
+                <label class="label" for="groq-api-key">Groq API key</label>
+                <input type="password" id="groq-api-key" class="input" placeholder="gsk_…" autocomplete="off" />
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ===================== CONTENT ===================== -->
+    <main class="shell-content" id="shell-content">
+
+      <!--
+        HOME. The returning user's landing state.
+
+        Previously there were only two states — hero (no book) and workspace
+        (book open) — so someone with twelve books and none open was shown a
+        first-timer's pitch for a product they already use. Home answers the
+        three things a returning user actually wants, in order of likelihood:
+        resume, switch to something recent, check what is still converting.
+      -->
+      <div class="view" id="view-home">
+        <div class="content-scroll">
+          <div class="home">
+
+            <!-- Continue: the single most likely intent, so it is the largest
+                 target on the screen and needs no scrolling to reach. -->
+            <section class="home-section" id="home-continue-section" hidden>
+              <h2 class="home-heading">Continue listening</h2>
+              <div id="home-continue"></div>
+            </section>
+
+            <!-- Still converting. Generation outlives the workspace it was
+                 started from, so it must be visible from outside it. -->
+            <section class="home-section" id="home-active-section" hidden>
+              <h2 class="home-heading">In progress</h2>
+              <div class="home-active" id="home-active"></div>
+            </section>
+
+            <section class="home-section" id="home-recent-section" hidden>
+              <div class="home-heading-row">
+                <h2 class="home-heading">Recent</h2>
+                <button class="btn btn-ghost btn-sm" id="home-see-all">All books →</button>
+              </div>
+              <div class="home-shelf" id="home-recent"></div>
+            </section>
+
+            <!-- Only reached when the library is genuinely empty. -->
+            <div class="home-empty" id="home-empty" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace view -->
+      <div class="view active" id="view-create">
+
+        <!--
+          WELCOME. Shown only while no book is open. A first-time user should
+          meet a single, obvious purpose statement and two actions — not empty
+          toolbars and a chapter list with nothing in it.
+        -->
+        <div class="welcome" id="welcome">
+          <div class="welcome-inner">
+            <div class="welcome-art" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="46" height="46">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+              </svg>
+            </div>
+            <h1 class="welcome-title">Turn any EPUB into a professional audiobook</h1>
+            <p class="welcome-sub">Upload a book, pick a narrator, and listen while you read along.</p>
+
+            <div class="welcome-actions" id="welcome-actions">
+              <button class="btn btn-primary" id="welcome-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload EPUB
+              </button>
+              <button class="btn btn-secondary" id="welcome-library">Open Library</button>
+            </div>
+
+            <p class="welcome-hint">…or drop an <strong>.epub</strong> anywhere on this page</p>
+
+            <!--
+              Upload progress renders here, in the centre of the screen the
+              user is already looking at, rather than in a sidebar panel off to
+              one side. It replaces the actions in place so the page does not
+              jump at the moment attention matters most.
+
+              Stages are driven by real parser events, never timers: a progress
+              bar that finishes before the work does destroys trust in every
+              other indicator in the app the first time it is caught lying.
+            -->
+            <div class="upload-progress hidden" id="upload-progress" aria-live="polite">
+              <div class="upload-file-info">
+                <span id="upload-file-name" class="truncate"></span>
+              </div>
+              <div class="progress"><div class="progress-fill" id="upload-progress-bar" style="width:0%"></div></div>
+              <p class="upload-status" id="upload-status">Uploading…</p>
+              <ol class="upload-steps" id="upload-steps">
+                <li class="upload-step" data-step="upload">Reading EPUB</li>
+                <li class="upload-step" data-step="extract">Extracting chapters</li>
+                <li class="upload-step" data-step="build">Building workspace</li>
+                <li class="upload-step" data-step="ready">Ready</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- WORKSPACE. Everything below only makes sense with a book open.
+             The book's identity and stats now live in the sidebar card, so the
+             full width of this column belongs to the chapter list. -->
+        <div class="workspace hidden" id="workspace">
+
+        <div class="content-toolbar">
+          <div class="search-field grow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" id="chapter-search-input" class="input" placeholder="Search chapters by name or number…" aria-label="Search chapters" />
+          </div>
+
+          <div class="segmented filter-tabs" role="tablist" aria-label="Filter chapters">
+            <button class="filter-tab" data-filter="all" role="tab" aria-selected="true">All <span class="count" id="count-all"></span></button>
+            <button class="filter-tab" data-filter="ready" role="tab" aria-selected="false">Ready <span class="count" id="count-ready"></span></button>
+            <button class="filter-tab" data-filter="progress" role="tab" aria-selected="false">Converting <span class="count" id="count-progress"></span></button>
+            <!--
+              Hidden until something fails: a permanently visible "Failed (0)"
+              tab is a standing suggestion that the app breaks, and it costs a
+              slot in a control that is scanned constantly.
+            -->
+            <button class="filter-tab filter-tab-failed" data-filter="failed" role="tab" aria-selected="false" id="filter-tab-failed" hidden>Failed <span class="count" id="count-failed"></span></button>
+          </div>
+
+          <select id="chapter-sort-select" class="select" style="width:auto" aria-label="Sort chapters">
+            <option value="index_asc" selected>Order</option>
+            <option value="index_desc">Reverse order</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+            <option value="date_desc">Newest audio</option>
+            <option value="date_asc">Oldest audio</option>
+          </select>
+
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all-chapters" />
+            <span id="chapter-count">0 selected</span>
+          </label>
+        </div>
+
+        <div class="content-scroll">
+          <div class="chapters-list" id="chapters-list"></div>
+
+          <!--
+            Pagination, not infinite scroll. Books here run to a thousand
+            chapters: rendering them all produces tens of thousands of DOM
+            nodes and a list that stutters when you drag the scrollbar. Pages
+            keep the DOM small and, unlike a virtualiser, give a stable answer
+            to "where am I" that survives a reload.
+
+            Search and filters deliberately run across the *whole* book before
+            paging — a search that only looked at the current page would be a
+            trap, silently reporting no matches for a chapter that exists.
+          -->
+          <nav class="pager" id="chapter-pager" hidden aria-label="Chapter pages">
+            <button class="btn btn-secondary btn-sm" id="pager-prev">← Previous</button>
+            <span class="pager-status" id="pager-status" aria-live="polite"></span>
+            <label class="pager-jump">
+              <span class="visually-hidden">Go to page</span>
+              <input type="number" id="pager-input" class="input" min="1" step="1" inputmode="numeric" />
+            </label>
+            <button class="btn btn-secondary btn-sm" id="pager-next">Next →</button>
+          </nav>
+        </div>
+
+        <!--
+          Selection toolbar. Bulk actions only exist while something is
+          selected, so they are not permanent chrome competing for attention.
+          It is `hidden` by default and revealed by renderChapters().
+        -->
+        <div class="selection-bar" id="selection-bar" hidden role="region" aria-label="Bulk chapter actions">
+          <span class="selection-count" id="selection-count">0 chapters selected</span>
+          <div class="selection-actions">
+            <!--
+              Names what it produces. "Generate" and "Convert" were used
+              interchangeably across the app for three different outcomes
+              (text, audio, or both), so neither told you what you would get.
+            -->
+            <button class="btn btn-secondary btn-sm" id="sel-translate"
+                    title="Translate the selected chapters to text only — no audio">
+              Translate text
+            </button>
+            <button class="btn btn-primary btn-sm" id="sel-generate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Translate + generate audio
+            </button>
+            <button class="btn btn-secondary btn-sm" id="sel-voice">Change voice</button>
+            <button class="btn btn-secondary btn-sm" id="sel-export">Export</button>
+            <button class="btn btn-ghost btn-sm danger" id="sel-delete">Delete audio</button>
+            <button class="btn btn-ghost btn-sm" id="sel-clear">Clear</button>
+          </div>
+        </div>
+        </div><!-- /#workspace -->
+      </div>
+
+      <!-- Library view -->
+      <div class="view" id="view-library">
+        <div class="content-toolbar library-toolbar">
+          <!-- The library had no title of its own, so the search field was the
+               first thing on the page and sat alone against the left edge. A
+               heading gives the toolbar a left anchor and states what you are
+               looking at and how much of it there is. -->
+          <div class="library-toolbar-head">
+            <h2 class="library-title">Library</h2>
+            <span class="library-count" id="library-count"></span>
+          </div>
+          <div class="library-toolbar-tools">
+            <div class="search-field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="library-search" class="input" placeholder="Search your library…" aria-label="Search library" />
+            </div>
+            <select id="library-sort" class="select" style="width:auto" aria-label="Sort library">
+              <!-- Recently opened first: the book you want next is nearly always
+                   the one you had open last. -->
+              <option value="recent" selected>Recently opened</option>
+              <option value="added">Recently added</option>
+              <option value="title">Title A–Z</option>
+              <option value="progress">Most converted</option>
+            </select>
+          </div>
+        </div>
+        <div class="content-scroll">
+          <div class="library-grid" id="library-grid"></div>
+          <div class="empty hidden" id="library-empty">
+            <div class="empty-icon" aria-hidden="true">📚</div>
+            <div class="empty-title">No books yet</div>
+            <p class="empty-text">Add an EPUB and it will appear here, ready to narrate.</p>
+            <button class="btn btn-primary" id="library-upload">Upload EPUB</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Chapter Reader Modal -->
+    <div class="modal-overlay hidden" id="chapter-modal">
+      <div class="modal-content modal-reader" id="modal-content-container"
+           role="dialog" aria-modal="true" aria-labelledby="modal-chapter-title">
+        <div class="modal-header reader-head">
+          <div class="reader-head-row">
+            <h3 id="modal-chapter-title">Chapter Title</h3>
+            <button class="modal-close" id="modal-close" aria-label="Close reader">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Reader View Tabs & Toolbar -->
+          <div class="reader-head-row reader-head-controls">
+            <!-- "Translated" used to mean either the AI's retelling or the
+                 user's own script, whichever existed — so the tab could not be
+                 trusted to show what its name claimed. They are now separate
+                 sources with separate tabs. -->
+            <div class="reader-tabs" role="tablist">
+              <button class="reader-tab" id="reader-tab-original" role="tab" aria-selected="true">Original</button>
+              <button class="reader-tab" id="reader-tab-ai" role="tab" aria-selected="false">AI script</button>
+              <button class="reader-tab" id="reader-tab-edit" role="tab" aria-selected="false">My script</button>
+            </div>
+
+            <!-- READER CONTROLS TOOLBAR -->
+            <div class="reader-toolbar">
+              <!-- Audio sync: follow mode is OPT-IN, so reading ahead is never
+                   interrupted by the page scrolling itself. -->
+              <div class="reader-tool-group" title="Keep the spoken line centred while audio plays">
+                <button class="reader-btn-icon reader-follow" id="reader-follow-toggle" aria-pressed="false">
+                  🎯 Follow
+                </button>
+                <span class="reader-sync-status off" id="reader-sync-status">No audio playing</span>
+              </div>
+
+              <!-- Font Size Controls -->
+              <div class="reader-tool-group" title="Font Size">
+                <button class="reader-btn-icon" id="btn-font-dec" title="Decrease Font Size" aria-label="Decrease font size">A-</button>
+                <span id="reader-font-val" class="reader-font-val">16px</span>
+                <button class="reader-btn-icon" id="btn-font-inc" title="Increase Font Size" aria-label="Increase font size">A+</button>
+              </div>
+
+              <!-- Font Family Selector -->
+              <div class="reader-tool-group" title="Font Style">
+                <select id="reader-font-select" class="reader-select">
+                  <option value="sans">Sans-Serif</option>
+                  <option value="serif" selected>Serif (Book)</option>
+                  <option value="mono">Monospace</option>
+                </select>
+              </div>
+
+              <!-- Line Height Selector -->
+              <div class="reader-tool-group" title="Line Spacing">
+                <select id="reader-line-height-select" class="reader-select">
+                  <option value="1.4">Compact</option>
+                  <option value="1.7" selected>Normal</option>
+                  <option value="2.0">Spacious</option>
+                </select>
+              </div>
+
+              <!-- Theme Selector -->
+              <div class="reader-tool-group" title="Reading Theme">
+                <select id="reader-theme-select" class="reader-select">
+                  <option value="dark" selected>🌙 Dark</option>
+                  <option value="sepia">📜 Sepia</option>
+                  <option value="light">☀️ Light</option>
+                  <option value="oled">🌌 OLED</option>
+                </select>
+              </div>
+
+              <!-- Fullscreen Toggle Button -->
+              <button class="reader-btn-icon" id="btn-reader-fullscreen" title="Toggle Fullscreen Reader"
+                      aria-pressed="false" aria-label="Toggle fullscreen reader">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!--
+          Two panes: read on the left, listen on the right. Checking that the
+          narration matches the text is the core review workflow, and doing it
+          by alt-tabbing between a reader and a player made it impractical.
+
+          `#modal-chapter-body` keeps its id, classes and position in the flow
+          so sentence sync, follow mode, themes and the font controls continue
+          to work untouched — this adds a pane beside it, it does not rebuild it.
+        -->
+        <div class="reader-panes" id="reader-panes">
+          <div class="modal-body reader-body" id="modal-chapter-body" tabindex="0">
+            <!-- Chapter text paragraphs will appear here -->
+          </div>
+
+          <aside class="listen-pane" id="listen-pane" aria-label="Listening">
+            <div class="listen-head">
+              <span class="listen-title">Listening</span>
+              <button class="reader-btn-icon" id="btn-listen-collapse"
+                      aria-expanded="true" aria-controls="listen-body"
+                      title="Hide listening pane" aria-label="Hide listening pane">⟩</button>
+            </div>
+
+            <div class="listen-body" id="listen-body">
+              <div class="listen-status" id="listen-status">No audio for this chapter yet.</div>
+
+              <!--
+                Version picker. A chapter accumulates versions precisely so they
+                can be compared, so the pane must let one be chosen rather than
+                always loading the newest and hiding the rest behind a dialog.
+              -->
+              <div class="listen-versions" id="listen-versions" hidden>
+                <label class="listen-versions-label" for="listen-version-select">Version</label>
+                <select class="select" id="listen-version-select" aria-label="Choose audio version"></select>
+              </div>
+
+              <!-- Reflects the docked player rather than owning a second audio
+                   element: two players could otherwise play at once. -->
+              <div class="listen-meta" id="listen-meta" hidden>
+                <div class="listen-row"><span>From</span><strong id="listen-source">—</strong></div>
+                <div class="listen-row"><span>Voice</span><strong id="listen-voice">—</strong></div>
+                <div class="listen-row"><span>Duration</span><strong id="listen-duration">—</strong></div>
+                <div class="listen-row"><span>Version</span><strong id="listen-version">—</strong></div>
+              </div>
+
+              <button class="btn btn-primary btn-block btn-sm" id="listen-play" hidden>
+                <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Play this chapter
+              </button>
+
+              <!-- Acts on the SELECTED version, not the newest one. -->
+              <div class="listen-version-actions" id="listen-version-actions" hidden>
+                <button class="btn btn-secondary btn-sm" id="listen-download">⬇ Download</button>
+                <button class="btn btn-secondary btn-sm" id="listen-regenerate"
+                        title="Make this version again from the same script">↻ Regenerate</button>
+              </div>
+
+              <!--
+                "Convert" named three different outcomes depending on where you
+                pressed it. Each action now says what it produces, and the
+                settings they will use are stated above them rather than hidden
+                inside a dialog.
+              -->
+              <div class="listen-actions" id="listen-actions" hidden>
+                <div class="listen-settings" id="listen-settings" title="Narration settings for this book">—</div>
+                <div class="listen-empty-note" id="listen-empty-note" hidden></div>
+                <button class="btn btn-secondary btn-block btn-sm" id="listen-translate">
+                  Translate text only
+                </button>
+                <button class="btn btn-secondary btn-block btn-sm" id="listen-generate">
+                  Translate + generate audio
+                </button>
+                <button class="btn btn-ghost btn-block btn-sm" id="listen-settings-edit">
+                  Change settings…
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div class="modal-footer reader-foot">
+          <span class="modal-meta" id="modal-chapter-meta"></span>
+          <span class="reader-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Click any paragraph to seek audio playback
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapter Audio Versions Modal -->
+    <div class="modal-overlay hidden" id="versions-modal">
+      <div class="modal-content modal-md" role="dialog" aria-modal="true" aria-labelledby="versions-modal-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="versions-modal-title">Audio Versions History</h3>
+            <p id="versions-modal-subtitle" class="modal-sub"></p>
+          </div>
+          <button class="modal-close" id="versions-modal-close" aria-label="Close versions history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="versions-sortbar">
+          <label class="versions-sort-label" for="versions-sort-select">Sort audio history</label>
+          <select id="versions-sort-select" class="reader-select">
+            <option value="desc" selected>📅 Newest First (Recent Converted)</option>
+            <option value="asc">📅 Oldest First</option>
+          </select>
+        </div>
+        <div class="modal-body" id="versions-modal-body">
+          <!-- Audio versions list will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Convert Modal -->
+    <div class="modal-overlay hidden" id="quick-convert-modal">
+      <div class="modal-content qc-modal" role="dialog" aria-modal="true" aria-labelledby="qc-modal-title">
+        <div class="modal-header">
+          <h3 id="qc-modal-title">Convert Chapter</h3>
+          <button class="modal-close" id="qc-modal-close" aria-label="Close convert dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body qc-body">
+        <p class="qc-sub" id="qc-modal-subtitle">Every conversion creates a new audio version. Nothing is overwritten.</p>
+
+        <!--
+          Scope is stated before anything else. A per-chapter dialog that looks
+          identical to a book-wide one is the reason "did that change one
+          chapter or all of them?" was unanswerable.
+        -->
+        <div class="qc-scope" id="qc-scope">Applies to: this chapter</div>
+
+        <!--
+          What the run will PRODUCE, chosen explicitly. "Convert" meant text,
+          audio, or both depending on which button you happened to press, so
+          the one thing the dialog never told you was what you would get.
+        -->
+        <label class="config-label">1. What should this produce?</label>
+        <div class="qc-action-group" id="qc-action-group">
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="both" checked />
+            <span><strong>Translate + generate audio</strong><small>The full run.</small></span>
+          </label>
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="script" />
+            <span><strong>Translate text only</strong><small>No audio. Review the script first.</small></span>
+          </label>
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="audio" />
+            <span><strong>Generate audio only</strong><small>Speak the script that already exists.</small></span>
+          </label>
+        </div>
+
+        <label class="config-label">2. Target Language</label>
+        <select id="qc-language" class="config-select qc-field"></select>
+
+        <!--
+          Script source is now an explicit choice. Previously "custom script"
+          was smuggled in as a translation *style*, so the app silently used AI
+          text even when the user had pasted their own script.
+        -->
+        <label class="config-label">3. What text should be spoken?</label>
+        <div class="qc-source-group" id="qc-source-group">
+          <label class="qc-source" data-value="ai">
+            <input type="radio" name="qc-source" value="ai" checked />
+            <span class="qc-source-body">
+              <strong>AI retelling</strong>
+              <small>Rewrites the chapter in natural Hinglish using the style below.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="custom" id="qc-source-custom">
+            <span class="qc-source-badge" id="qc-custom-badge"></span>
+            <input type="radio" name="qc-source" value="custom" />
+            <span class="qc-source-body">
+              <strong>My saved script</strong>
+              <small id="qc-custom-note">Spoken exactly as pasted — no AI, no edits.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="original">
+            <input type="radio" name="qc-source" value="original" />
+            <span class="qc-source-body">
+              <strong>Original book text</strong>
+              <small>No translation at all. Reads the English source as-is.</small>
+            </span>
+          </label>
+        </div>
+        <button type="button" class="qc-link" id="qc-edit-script">✍️ Paste / edit my script for this chapter</button>
+
+        <div id="qc-style-row">
+          <label class="config-label">4. Storytelling Style</label>
+          <select id="qc-style" class="config-select qc-field"></select>
+        </div>
+
+        <label class="config-label" id="qc-voice-label">5. AI Voice</label>
+        <select id="qc-voice" class="config-select qc-field"></select>
+
+        <div class="qc-summary" id="qc-summary"></div>
+
+        <!--
+          Scope of the change, stated plainly. Without this the dialog has to
+          guess whether a chosen voice was meant for this chapter or for the
+          whole book, and either guess is wrong half the time. Unchecked by
+          default because a per-chapter dialog most often means "just this one".
+        -->
+        <label class="qc-default-row">
+          <input type="checkbox" id="qc-make-default">
+          <span>
+            Use these settings as this book's default
+            <small>Otherwise they apply to this chapter only.</small>
+          </span>
+        </label>
+
+        <!--
+          The "don't ask again" contract. Shown only until it is accepted, so
+          it disappears once it has been answered rather than nagging.
+        -->
+        <label class="qc-default-row" id="qc-quick-row">
+          <input type="checkbox" id="qc-quick-action">
+          <span>
+            Use these settings for this book and don't ask again
+            <small>Row buttons will start straight away with these settings. The gear stays one click away for exceptions.</small>
+          </span>
+        </label>
+        </div>
+
+        <div class="modal-footer qc-foot">
+          <button id="btn-qc-start" class="qc-start">🚀 Start Conversion</button>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Batch conflict resolution.
+
+      A selection whose chapters do not agree on settings has no single right
+      answer, and both plausible ones are destructive in different directions:
+      converting uniformly discards the exceptions, converting per-chapter
+      creates several jobs. Guessing either way silently was the old bug, so
+      the choice is put to the user once and can then be remembered.
+    -->
+    <div class="modal-overlay hidden" id="batch-conflict-modal">
+      <div class="modal-content qc-modal" role="dialog" aria-modal="true" aria-labelledby="bc-title">
+        <div class="modal-header">
+          <h3 id="bc-title">These chapters use different settings</h3>
+          <button class="modal-close" id="bc-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body qc-body">
+          <p class="qc-sub" id="bc-subtitle">Choose how to continue.</p>
+
+          <div class="qc-action-group" id="bc-mode-group">
+            <label class="qc-action">
+              <input type="radio" name="bc-mode" value="perChapter" checked />
+              <span>
+                <strong>Use each chapter's own settings</strong>
+                <small id="bc-per-chapter-note">Keeps every exception. Creates one job per group.</small>
+              </span>
+            </label>
+            <label class="qc-action">
+              <input type="radio" name="bc-mode" value="uniform" />
+              <span>
+                <strong>Use one setting for all selected chapters</strong>
+                <small id="bc-uniform-note">Uses this book's defaults for every chapter in this batch.</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="qc-summary" id="bc-groups"></div>
+
+          <!--
+            Uniform settings are only shown once that option is chosen: showing
+            five selects for a choice the user has not made yet implies the
+            per-chapter route also depends on them, which it does not.
+          -->
+          <div id="bc-uniform-fields" hidden>
+            <label class="config-label">Language</label>
+            <select id="bc-language" class="config-select qc-field"></select>
+
+            <label class="config-label" id="bc-style-label">Style</label>
+            <select id="bc-style" class="config-select qc-field"></select>
+
+            <label class="config-label" id="bc-voice-label">AI Voice</label>
+            <select id="bc-voice" class="config-select qc-field"></select>
+
+            <label class="config-label">Script source</label>
+            <select id="bc-source" class="config-select qc-field">
+              <option value="ai">AI script (translate, then speak)</option>
+              <option value="custom">My saved script (spoken verbatim)</option>
+              <option value="original">Original book text (untranslated)</option>
+            </select>
+
+            <label class="config-label">Action</label>
+            <select id="bc-action" class="config-select qc-field">
+              <option value="both">Translate + generate audio</option>
+              <option value="script">Translate text only</option>
+              <option value="audio">Generate audio only</option>
+            </select>
+
+            <label class="qc-default-row">
+              <input type="checkbox" id="bc-save-default">
+              <span>
+                Use these settings as this book's default
+                <small>Chapter overrides are kept, but ignored for this batch.</small>
+              </span>
+            </label>
+          </div>
+
+          <label class="qc-default-row">
+            <input type="checkbox" id="bc-remember">
+            <span>
+              Remember my batch preference for this book
+              <small>You can change it again from this dialog any time.</small>
+            </span>
+          </label>
+
+          <p class="qc-sub" id="bc-safety">
+            Chapter settings are never deleted — a uniform batch ignores them for this run only.
+          </p>
+        </div>
+        <div class="modal-footer qc-foot">
+          <button id="btn-bc-start" class="qc-start">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Script Editor: the exact text that will be spoken -->
+    <div class="modal-overlay hidden" id="script-editor-modal">      <div class="modal-content se-modal" role="dialog" aria-modal="true" aria-labelledby="se-title">
+        <div class="se-head">
+          <div>
+            <h3 style="margin:0;" id="se-title">My Script</h3>
+            <p class="qc-sub" id="se-sub">Pasted text is spoken word-for-word. The AI will not touch it.</p>
+          </div>
+          <button class="modal-close" id="se-close" aria-label="Close script editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <textarea id="se-text" class="se-text" spellcheck="false"
+          placeholder="Paste your Hinglish (English letters) or Hindi (देवनागरी) script here…&#10;&#10;Both are accepted — the voice handles either."></textarea>
+        <div class="se-status" id="se-status"></div>
+        <div class="se-actions">
+          <!--
+            Paste is the first thing anyone does here, so it is a real button
+            rather than something you are expected to know. Where the browser
+            refuses clipboard access the button explains the Ctrl+V fallback
+            instead of failing silently.
+          -->
+          <button class="se-btn ghost" id="se-paste" title="Paste from clipboard (Ctrl+V)">
+            📋 Paste
+          </button>
+          <button class="se-btn ghost" id="se-delete">Delete script</button>
+          <span style="flex:1"></span>
+          <span class="se-hint" id="se-shortcut-hint">Ctrl+S to save · Esc to close</span>
+          <button class="se-btn ghost" id="se-cancel">Cancel</button>
+          <button class="se-btn" id="se-save">Save script</button>
+          <!-- The reason the script was pasted at all: hearing it. -->
+          <button class="se-btn primary" id="se-save-generate">Save &amp; generate audio</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+
+    <!-- ===================== DOCK =====================
+         The player is docked to the bottom edge and is reachable in every app
+         state, so playback controls never move.
+    -->
+    <div class="shell-dock">
+
+      <!-- Player: only present once something is loaded -->
+      <div class="player hidden" id="sticky-player">
+        <div class="player-now">
+          <div class="player-art">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          </div>
+          <div class="col truncate">
+            <span class="player-title truncate" id="player-chapter-title">Select a chapter</span>
+            <span class="player-sub truncate" id="player-book-title"></span>
+          </div>
+          <!-- Jumping across a long book by pressing "next" dozens of times is
+               not navigation, so the whole track list is one click away. -->
+          <select id="player-chapter-select" class="select player-jump" aria-label="Jump to chapter"></select>
+        </div>
+
+        <div class="player-center">
+          <div class="player-buttons">
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-prev-chapter" title="Previous chapter" aria-label="Previous chapter">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="btn btn-primary btn-icon" id="btn-play-pause" title="Play / pause" aria-label="Play or pause">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <svg class="icon-pause hidden" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-next-chapter" title="Next chapter" aria-label="Next chapter">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+          </div>
+          <div class="player-timeline">
+            <span class="player-time" id="player-current-time">0:00</span>
+            <input type="range" class="player-seek" id="player-seek" min="0" max="100" value="0" aria-label="Seek" />
+            <span class="player-time" id="player-duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="player-right">
+          <!--
+            Speed is the most-adjusted control in an audiobook player, so it is
+            a real menu rather than a dropdown of five arbitrary rungs. The
+            chosen rate is remembered per book: a rate that suits a brisk
+            narrator rarely suits a slow one, and a single global value forces
+            a re-adjustment every time you switch books.
+          -->
+          <div class="speed-control">
+            <button class="btn btn-ghost btn-sm speed-trigger" id="player-speed-trigger"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="speed-menu"
+                    title="Playback speed">
+              <span id="player-speed-label">1×</span>
+            </button>
+            <div class="speed-menu hidden" id="speed-menu" role="menu" aria-label="Playback speed">
+              <div class="speed-presets" id="speed-presets"></div>
+              <label class="speed-custom">
+                <span>Custom</span>
+                <input type="number" id="speed-custom-input" class="input"
+                       min="0.25" max="4" step="0.05" aria-label="Custom playback speed" />
+              </label>
+              <p class="speed-hint">0.25× – 4×. Pitch is preserved.</p>
+              <!--
+                Speed and tone are remembered per book. "Make default" promotes
+                the current values to the app-wide default, the way a video
+                player does, so a preference has to be set once rather than on
+                every book.
+              -->
+              <div class="speed-default-row">
+                <button class="speed-default-btn" id="speed-make-default" type="button">
+                  Make default
+                </button>
+                <span class="speed-default-note" id="speed-default-note"></span>
+              </div>
+            </div>
+          </div>
+
+          <label class="label text-xs" for="player-pitch-slider">Tone</label>
+          <input type="range" id="player-pitch-slider" min="0.5" max="2" step="0.1" value="1"
+                 title="Tone — double-click to reset" />
+        </div>
+
+        <div id="subtitle-container" class="subtitle-display" hidden></div>
+      </div>
+    </div>
+
+    <!-- ===================== ACTIVITY CONSOLE =====================
+         The trigger lives in the header (see above). The panel drops from it
+         like a menu, so it is anchored to its own control rather than to a
+         screen corner that something else also wants.
+    -->
+    <div class="console-panel hidden" id="console-panel" role="dialog" aria-label="Activity log">
+      <div class="console-head">
+        <span class="console-title">Activity log</span>
+        <span class="grow"></span>
+        <button type="button" id="log-copy" class="btn btn-ghost btn-sm">Copy</button>
+        <button type="button" id="log-clear" class="btn btn-ghost btn-sm">Clear</button>
+        <button type="button" id="console-close" class="btn btn-ghost btn-icon btn-sm" aria-label="Close activity log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="console-toolbar">
+        <input type="search" id="log-search" class="input" placeholder="Search logs…" aria-label="Search logs" />
+        <select id="log-level-filter" class="select" aria-label="Filter by level">
+          <option value="all">All levels</option>
+          <option value="error">Errors</option>
+          <option value="warn">Warnings</option>
+          <option value="success">Success</option>
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+        </select>
+      </div>
+      <div class="log-entries" id="log-entries" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <audio id="audio-element" preload="auto"></audio>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

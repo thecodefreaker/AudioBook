@@ -1,0 +1,251 @@
+/* ===========================================================================
+   HOME — the returning user's landing state
+   ---------------------------------------------------------------------------
+   The app previously had two states: a hero for people with no book open, and
+   a workspace for people with one. Someone with a dozen books and none open
+   therefore got a first-timer's pitch for a product they already use, and had
+   to click past it to reach work in progress.
+
+   Home is laid out in descending order of intent — resume, then what is still
+   converting, then recent books — because that is the order a returning user
+   actually wants them in. The hero is now reserved for the single case it is
+   right for: an empty library.
+   =========================================================================== */
+
+.home {
+  /* Width and centring come from `.content-scroll`'s gutter, which every view
+     now shares — Home used to cap itself at 1080px against the library's
+     1100px, which read as a subtle jump when switching tabs. The extra
+     top/bottom padding stays, since Home has no toolbar above it. */
+  padding-block: var(--space-2) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+/* A gap sized for four sections looks like a mistake when there are two. With
+   nothing converting there is one fewer band, so Home tightens rather than
+   spacing two short cards down a tall empty column. */
+.home:has(#home-active-section[hidden]) {
+  gap: var(--space-8);
+}
+
+.home-section { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.home-heading {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.home-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* --- Continue listening --------------------------------------------------
+   The largest target on the screen, because resuming is the single most
+   likely thing a returning user came here to do. */
+.continue-card {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-1) 60%);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+.continue-card:hover {
+  border-color: var(--accent-border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-3);
+}
+.continue-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.continue-cover {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-2);
+}
+.continue-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.continue-body { min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.continue-title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.continue-sub { margin: 0; font-size: var(--text-base); color: var(--text-3); }
+.continue-where {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- In progress ---------------------------------------------------------
+   Conversion outlives the workspace it was started from, so a job must be
+   visible from outside the book it belongs to. Otherwise "is it still going?"
+   can only be answered by opening the book and hoping. */
+.home-active { display: flex; flex-direction: column; gap: var(--space-2); }
+.home-active-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.home-active-row:hover { border-color: var(--border-3); }
+.home-active-row:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.home-active-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-1);
+  min-width: 12ch;
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-active-label {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Recent shelf --------------------------------------------------------
+   Covers, because a shelf is scanned visually. `auto-fill` holds the row's
+   empty tracks open and `1fr` divides the width across them, so a cover is
+   the same size at two books or twenty — the shelf keeps one rhythm instead
+   of stretching into giant tiles when it is short. It always ends in an "Add
+   a book" tile, so the held-open tracks are never simply dead. */
+.home-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-5);
+}
+
+.shelf-book {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  border-radius: var(--radius-md);
+}
+.shelf-book:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.shelf-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-3);
+  box-shadow: var(--shadow-2);
+  transition: transform var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+.shelf-book:hover .shelf-cover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+}
+.shelf-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shelf-cover .library-cover-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%; height: 100%;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.shelf-badge { position: absolute; top: var(--space-2); right: var(--space-2); }
+
+/* The add tile keeps the shelf's cover proportions so it sits in the row as a
+   peer rather than an afterthought, but is dashed and unfilled so it never
+   reads as a book. */
+.shelf-add-cover {
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1.5px dashed var(--border-3);
+  box-shadow: none;
+  color: var(--text-4);
+  transition: color var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+.shelf-add-icon { font-size: 30px; line-height: 1; }
+.shelf-add:hover .shelf-add-cover {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  transform: none;
+}
+.shelf-add .shelf-title { color: var(--text-2); }
+
+.shelf-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: var(--leading-tight);
+  /* Two lines then ellipsis: one truncates too many real titles, three makes
+     the row heights ragged. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.shelf-sub {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* `.empty` brings its own generous padding, so the wrapper adds none — the two
+   used to stack into roughly 200px of nothing above the icon. */
+.home-empty { padding: 0; }
+
+/* --- Responsive ---------------------------------------------------------- */
+@media (max-width: 720px) {
+  /* The resume button drops below the text rather than squeezing the title
+     into an unreadable column. */
+  .continue-card {
+    grid-template-columns: 72px 1fr;
+    gap: var(--space-4);
+  }
+  .continue-actions { grid-column: 1 / -1; }
+  .continue-actions .btn { width: 100%; }
+  .continue-title { font-size: var(--text-lg); }
+  .home { gap: var(--space-8); padding-top: var(--space-2); }
+  .home-shelf { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4); }
+}

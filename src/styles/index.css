@@ -1,0 +1,65 @@
+﻿/* ===========================================================================
+   BASE
+   ---------------------------------------------------------------------------
+   Reset and document defaults.
+
+   The old sticky header, the "Step 1/2/3/4" wizard chrome and the centred
+   `app-main` wrapper all described a layout that no longer exists, so those
+   rules are gone rather than left behind to be reasoned about later.
+
+   Tokens live in tokens.css; components in primitives.css, shell.css,
+   chapters.css and components.css.
+   =========================================================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font);
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* The shell owns scrolling - each region scrolls independently - so the
+     page itself must not. This is what stops the whole layout drifting
+     upward as a long chapter list grows. */
+  overflow: hidden;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a { color: var(--accent-text); }
+
+/* --- Views -------------------------------------------------------------- */
+.view {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.view.active { display: flex; }
+
+/* --- Scrollbars --------------------------------------------------------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-1);
+}

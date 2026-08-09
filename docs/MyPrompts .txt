@@ -1,0 +1,412 @@
+Here is the complete chronological list of **all your user inputs** extracted directly from the chat conversation file:
+
+1. **Initial Project Request & Requirements:**
+> You are an expert Full-Stack Software Engineer, AI Engineer, and UI/UX Designer.
+> Build a production-quality web application that converts English EPUB books into high-quality Hindi audiobooks.
+> Let's PLAN FIRST .
+> The application must be modular, scalable, resumable, and suitable for processing very large books.
+> Project Name: EPUB AI Audiobook Generator
+> Goal: A user should simply: Open the web application. Upload an EPUB book. It should show chapters there . There should be option to see chapters (I want best user interface). User can select the chapters they want to convert , in which language .. they can see the progres baar or the conversion logs to if they want . The error handling should be correct. Perchapter Audios can be listend on the website . It can be stored too once they generated for a particular book. Choose translation language. Mostly either in English to English or english to hindi Audio. Choose AI voice. Click Generate. Watch real-time progress. Download the generated audiobook.
+> Everything else should happen automatically.
+> let's plan what the best thing we can do . Main goal is to giv ebest User experence and to have accurate result with good quality autio voice that converts complete book ito audio correctly .
+> 
+> 
+
+
+2. **Flow Continuation:**
+> continue
+> 
+> 
+
+
+3. **High-Level Overview Query:**
+> How the application working now tell me high level as a user
+> 
+> 
+
+
+4. **Storytelling Quality & Context-Aware Translation Request:**
+> so i have a novel in english i want audio as story telling correctly .. in hindi but hindi should be understandable like some words meands diiferent in somesentences so it should corectly give that ? is it possible for very basic example the word health means swasthya in hindi but spmetime like in game we say health only .. so things like that can be ciorrect;y so it should feel not translated but correctly writtten
+> 
+> 
+
+
+5. **Groq API Decision:**
+> ueah wit h groq we can do that
+> 
+> 
+
+
+6. **UX Enhancements & Database / CRUD Operations Request:**
+> yeah with grow api key we can do that having user selecting from vvarious options ... also we should know wheen the api key limit execeeded . pr not working , tranparent logs ,.
+> also we can manage spped ,... pitch voice in the player itself .
+> one thing i noticed when iconverted a chapter the start button shows starting and not ready fto translate other chapter or any other language anything .. thee bitton don'y respond .
+> also the player should have a option to listen to the chapter just on the chapter row itself ... if thwy want
+> i want you to know what the bsest user experiwnce is ... how can we make the ux beeeter , ease of access but also transparent what running in backend correctly .
+> i ewant to have many features in this applicatiojn and easily assecsible user can have beeter ways .
+> also the database or session is also not working the books not getting srored or the audio not getting ... stored . i want full crud operation for books for the audios .
+> i want best user experience possible if poosijle discuss and recommmend ways to improve an d enhace it from 0 to 100 level
+> 
+> 
+
+
+7. **Feature Request Duplication (Sent again):**
+> yeah with grow api key we can do that having user selecting from vvarious options ... also we should know wheen the api key limit execeeded . pr not working , tranparent logs ,.
+> also we can manage spped ,... pitch voice in the player itself .
+> one thing i noticed when iconverted a chapter the start button shows starting and not ready fto translate other chapter or any other language anything .. thee bitton don'y respond .
+> also the player should have a option to listen to the chapter just on the chapter row itself ... if thwy want
+> i want you to know what the bsest user experiwnce is ... how can we make the ux beeeter , ease of access but also transparent what running in backend correctly .
+> i ewant to have many features in this applicatiojn and easily assecsible user can have beeter ways .
+> also the database or session is also not working the books not getting srored or the audio not getting ... stored . i want full crud operation for books for the audios .
+> i want best user experience possible if poosijle discuss and recommmend ways to improve an d enhace it from 0 to 100 level
+> 
+> 
+
+
+8. **Testing Feedback:**
+> test them i don't see any
+> 
+> 
+
+
+9. **Browser Re-testing Prompt:**
+> try again opeing your browser
+> 
+> 
+
+
+10. **Issue Reporting (Missing Player & DB):**
+> yeah with grow api key we can do that having user selecting from vvarious options ... also we should know wheen the api key limit execeeded . pr not working , tranparent logs ,.
+> also we can manage spped ,... pitch voice in the player itself .
+> one thing i noticed when iconverted a chapter the start button shows starting and not ready fto translate other chapter or any other language anything .. thee bitton don'y respond .
+> also the player should have a option to listen to the chapter just on the chapter row itself ... if thwy want
+> i want you to know what the bsest user experiwnce is ... how can we make the ux beeeter , ease of access but also transparent what running in backend correctly .
+> i ewant to have many features in this applicatiojn and easily assecsible user can have beeter ways .
+> also the database or session is also not working the books not getting srored or the audio not getting ... stored . i want full crud operation for books for the audios .
+> i want best user experience possible if poosijle discuss and recommmend ways to improve an d enhace it from 0 to 100 level
+> o don't see the player on each chaper ? no db woriking library page is empty
+> 
+> 
+
+
+11. **Library Page Blank Bug Report:**
+> no i sti;ll see empty afterlibry click
+> 
+> 
+
+
+12. **Inability to Check Inside UI Query:**
+> Still no why ca'tm7o8 cyeciyhg insifr?
+> 
+> 
+
+
+13. **UI Check Prompt:**
+> Che k UI
+> 
+> 
+
+
+14. **App & Storage Failure Report:**
+> web app not working storage amnfd db also not working
+> 
+> 
+
+
+15. **Inline Audio Playlist & 0 to 100 UX Direction:**
+> also the player should have a option to listen to the chapter just on the chapter row itself ... if thwy want
+> i want you to know what the bsest user experiwnce is ... how can we make the ux beeeter , ease of access but also transparent what running in backend correctly .
+> i ewant to have many features in this applicatiojn and easily assecsible user can have beeter ways .
+> i want best user experience possible if poosijle discuss and recommmend ways to improve an d enhace it from 0 to 100
+> also we can manage speed ,... pitch voice in the player itself
+> there should be option to user for each chapter ... in thr chapter row itself to conver it to audio ... and he can play from there .. like a playlist ..
+> What else we can give ux and fetures ?.
+> 
+> 
+
+
+16. **Inline Audio Conversion Request:**
+> Yeah for each chapter it should show the audio coversuion thing
+> 
+> 
+
+
+17. **Chapter Search & "Audio Ready" Playlist Tab Request:**
+> User should be able to search the cghaptwer eyther by number or name .. alsio the downloaded ones should be also shown at one place imn another tab ibn the pag e ...
+> i think this is the basic UX design .. if this basic thing is not there how can you be able ti create more features ??
+> You rember you are known dfor you creativity an is the besst ux fdeveloper keeop up to your expectations
+> 
+> 
+
+
+18. **Unified Workspace & Self-Driven UX Design Challenge:**
+> hey would yyu only do what i say ,..?? use your own btrain to while adding features ... like you added cobvert button but did not gavet he option to select languagr voice ? etc
+> 
+> 
+
+
+19. **Missing Chapter Preview Option Report:**
+> Also you remved the option to read thre chapter ???
+> 
+> 
+
+
+20. **Missing Groq Options Report:**
+> Alsi i can't seethe groq options or anything ike that anywhere ?
+> 
+> 
+
+
+21. **Internal Tool Check Query:**
+> can you your tool to ssee the and use that change im UI cause i don't find it
+> 
+> 
+
+
+22. **Tool Failure Query:**
+> Wnyy you rtool id gailing ?
+> 
+> 
+
+
+23. **UI Display Issue:**
+> I can't see that innUI
+> 
+> 
+
+
+24. **UI Screenshot Context:**
+> this is the UI i am seeing ther is not audio settings
+> 
+> 
+
+
+25. **Groq Rate Limit Error Log Feedback:**
+> Okay yeah these are Translation failed: Groq Translation failed: 413 {"error":{"message":"Request too large for model `llama-3.1-8b-instant` in organization `org_01kzckt41ses4bv48xsq5j5d7z` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 9459, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at [https://console.groq.com/settings/billing](https://console.groq.com/settings/billing)","type":"tokens","code":"rate_limit_exceeded"}}
+> [11:18:12 PM] 🎉 Audiobook generation complete!
+> 
+> 
+
+
+26. **Process Freeze Report:**
+> It stuck to waiting .. for 5 minutes straight ... no log nothing ?
+> 
+> 
+
+
+27. **Hinglish Conversational Prompt Rules & Sample Chapter Text:**
+> What prompt you used for coverting into Hindi ? It's good but somethings are still. it should be hinglish languaeg as we generally use in our daily life .
+> AudioBook AI
+> EPUB to Audiobook Generator
+> ...
+> [Sample text provided from *My Vampire System* Chapter 2]
+> ...
+> Chapters are like this ..
+> so daily going to dainik which we don't use in normal life ...
+> and many more words .. i can't tell you all exact right .. so the language should be correctly like normal I gues
+> CAn we do that ?
+> 
+> 
+
+
+28. **Adaptive Translation Styles, Text Highlighting & 2-Column Workspace Request:**
+> Yeah so ad d multiple ones styles that user can select accrding to his choice or the type of book he is readin ... Like ciurrently i am reading novel and if i read some praticle book or some other so style adpats accrdingly .
+> Also is it possible to have the text highlighted the one which is getting spoken ? in both english and hindi ?
+> I mean the preview text would be shown in english only ( i mean the oriignal book language but the text or sentence or the paraph being which is being spoken should highligh so it's easy to keep trach where i am
+> Can we fix the UI for this Audio settting and place it besid e the chapterlist so that it look good .Also logs should be verbose and exact accurate .
+> I als wanna know what happens when user click on cover button .. cause there is no oprion to select language or voiee for that .
+> 
+> 
+
+
+29. **Chapter Title Text Truncation Issue:**
+> Now in the multicolun layout the chaptername is now getting hidden as the card widht is less so it is not shown But chapter name should be shown correctly however long the name is is there ay to show it ??
+> 
+> 
+
+
+30. **Full-Width Screen Usage Query:**
+> Use full widh of the screen why you kept space on both sides?is it inteneded? If yes then tel me
+> 
+> 
+
+
+31. **In Progress Filter Tab & Background Conversion Request:**
+> Also the once i i clicked the convert the chapter should also shown an a progress tab like coverting being converte d tab .. in whing in progress chapters are shown .
+> And also in the list htere should be a dynami cindicator shown when the chapter is being converting and i can mover tabs and labrary in mean while without it's interruption right ? can we do that right?
+> 
+> 
+
+
+32. **Duplicate Audio List Issue:**
+> okay so now i can see that wehn i move to thi s audio ready tab then al the audios are like moved to below audio setting not below the chapter search bar as all chapter shown can you fin the reason
+> 
+> 
+
+
+33. **Empty Audio Ready List Bug:**
+> Hey that list gone now the audio ready list is empty for eerybook is it deleted?
+> 
+> 
+
+
+34. **Request to Move to Phase 2 (Text Highlighting):**
+> CAn we go to phase 2 work which we halted due to complexity .. ?
+> 
+> 
+
+
+35. **Karaoke Subtitle & Storytelling Quality Requests:**
+> I can't see that ...
+> also i want that when i open the Boook chaptr to read ten the chapter's lines or paragraph should be highlighted as the adio moved .. it would also work if i seek .. then we move to that paraph scroling the chapter ..
+> also i am not able to see the change you made .
+> and also when the book is converted to Hindi from English it sounds like translation but it should not be traslation it shoulb be like the story written in hinglish only correctly as if someone explaining like those youtube videos who explain chapters .
+> I think it would need simle prompts i don;t know but yeah that should be done . The Audio shoul d not feel like that we converted from English to Hindi but HInglish that we use in our daily life like don't use too much ralaed words ..
+> 
+> 
+
+
+36. **Job Cancellation Emergency Query:**
+> Hoe do i cancel all converting ?? I accidently cicke to convert all 5000 chapters
+> 
+> 
+
+
+37. **Flow Continuation:**
+> continue ?
+> 
+> 
+
+
+38. **Database Status Lock Error Report:**
+> Showing error book is not ready for generation why
+> 
+> 
+
+
+39. **Opaque Logs & ETA Request:**
+> I choosed a book from libary and converting it's chapter but it's throuwing error . Also when i chose books toconvert i don't see detailed logs ..
+> I asked to show the transparent logs of the things hapeninga t backedn wothout any coating for each vconversion .. I can't see the logs and the progress how much the Estimation time etc ..
+> I want more goo d user experience in that deprtment too .
+> 
+> 
+
+
+40. **Single-File Project Packer Script Request:**
+> I need a script to convert this project into a single text file (I want to have this in my another system but only thing i can copy andpaste there is text so i need that this project converted to text file )
+> and there from that text file i convert the back into folders and files corretly ? Is it possible ?
+> 
+> 
+
+
+41. **Full Project Documentation Request:**
+> I have given you too many propmts .... How ever if i had gave you clear instrurction to build this then you might have create correct plan
+> So can you create the project doucment to tell what exactly created . with fetures . an d your recommendation .. DOn't excrlude even th slight information .
+> 
+> 
+
+
+42. **Detailed Hinglish Storytelling Rules, Badges, Re-conversion & Dual-View Reader Requirements:**
+> Use prompt like this ... Convert the given English story into natural, beautiful Hinglish.
+> Write it as if the story was originally written in Hindi, not translated from English.
+> Rules:
+> Use simple, natural Hindi mixed with common English words where they sound natural.
+> Keep all character names, places, powers, abilities, and important terms unchanged.
+> Do not translate names or special terms unnecessarily.
+> Do not translate word-for-word. Understand the meaning first, then rewrite it naturally.
+> Keep the original story, events, emotions, and dialogue exactly the same.
+> Make dialogues sound like real people speaking.
+> Make narration smooth and cinematic.
+> Use short and natural sentences so the story is easy to listen to.
+> Keep the emotional flow of the scene.
+> into normal hindi story a sif we are talking in hinglish correctly story telling .. as if this story written in hindi converational .
+> 2 there is not indication in UI that the chapter converted towhich language . which voice .. Or if it is converted to hindi by which method ... using which style ..
+> 3 Alsp once converted there is not option to convert the chapter again using difffernt styles or language . That should also be there .
+> And also store the corrrect hindi translatated chapter along with english and original chapter both views can be previwed or read . and on both of them want that when i open the Boook chaptr to read ten the chapter's lines or paragraph should be highlighted as the adio moved .. it would also work if i seek .. then we move to that paraph scroling the chapter ..
+> These things are very basic and necessary for this .
+> 
+> 
+
+
+43. **Reader Toolbar Features Request:**
+> Also one more thing to increae descrese text while reading the book in both hindi or english view can't we have a good reader . ? with features?
+> 
+> 
+
+
+44. **Coexisting Audio Versions Request:**
+> Also when i click reconvert then would the differnt audio fo th e same chapter can coexist ? They should coexist adn can be in a grouped format like for the particlular hapter if two aduios re thre then i can swtich between them
+> 
+> 
+
+
+45. **Separate Documentation Folder Request:**
+> Where are you storing all the documenttion you creating . I want you to store all documentation, all the prompts i giving to you , all the attached assest which i pasted here .. in strcutre format in a sseparte folder is it possible ?
+> 
+> 
+
+
+46. **Full Documentation Compilation Prompt:**
+> Not only this .. from the start i wrote so many propts , i mean the things i types you to do .. those .. and also you create manyartifacts the documentaions allof thises can they be compile in this folder corrrectly ?
+> 
+> 
+
+
+47. **Log Visibility, Persistent Card Error & Audio Version Deletion Fixes:**
+> Check the logs i see some error and some modelsn ot working and also i don't see the Errors in UI .. I told that UI shoud show correct errors like this logs .(not only on the snackbar types ) but also it should show transparently like terminal . which will persist . aperchapter .. even when success or failiure. Earlier it was correctly there don;t know why it has ben removed,. But you implemnt hs hting .
+> also i asked to have one hapter can haeve multipl e audios wit h different styles but when i see i can only see isngle ausio and earlier one automatically replace . also there is not option to delte the audio .
+> And at starting don't check all the audio
+> 
+> 
+
+
+48. **Model Fallbacks, Hinglish Prompt & Custom Script Editor Proposal:**
+> . Your fallback models need checking
+> You currently have:
+> const modelsToTry = [
+> requestedModel,
+> 'llama-3.3-70b-versatile',
+> 'mixtral-8x7b-32768',
+> 'llama-3.1-8b-instant'
+> ]
+> This is the part I'd verify against the current Groq model list rather than hard-code old model names. Groq's available/decommissioned models can change.
+> Also, there's little point trying the exact same model twice if requestedModel is already llama-3.3-70b-versatile.
+> Your Google fallback loses the requested style. If Groq fails, Google Translate will produce Hindi translation, but it won't follow your Hinglish storytelling/TTS style. Keep the Groq output as clean, natural spoken Hinglish.
+> [Master Style Prompt Provided]
+> Also i think there should be an option that i paste the converted hindi text beore confverting into the audio .. if i want so i f the user want he can paste the traslated text in hindi or hinglish (do they need to be specifi or we can handle that ither hindi(devnaglgri ) or hnglis (english letters) Would that be a goood Ux or we should not maeke it this complex . I think it's just advanced eature ..like they want the paticular ext for that chapter converted correctly in audio . so what do you thing wha can we do
+> Please keep updating my docs information
+> 
+> 
+
+
+49. **Timestamps & Audio Version Sorting Request:**
+> Hey one thing 3when i click on reconver t the previous aduio is replacing and i see ony the new audio .. not the old previous audio .. I told that each audio should be mainatained .. eather it's by same style language , or tool unless deleted it shoul db e there with clear indicatio o fdata time and sorted rencet converted first by default ..
+> ofcuourse user can manually sort . .. .
+> ANything did i miss . please recommend
+> 
+> 
+
+
+50. **Custom Script Execution Bug & Deep Logs Query:**
+> Also one thing more when i add my custom script and convert to audio it still not getting conveted to that custome script .. also there is not indication that it convert from the ccustom script . there should not be any more chnages in the script which i paste that script directly be used as the text to convert audio tell me would thre be problem is that t script would be in devnagru hindi or hinglish hindi . Am i free to use any ..? Or strictly one ? I
+> also logs are also not shouwn deplylu on i see is converting 1/ this chunk while converting but nowhere i can see deep logs neither int eh progress bar or no qhwre .
+> also the audio is it different audio that ocnverts hindglish to hindi audio or dvnaglri to hindi adio ?
+> Plese confirm and remcmment tbest aproach
+> Don't forget to updat docs
+> 
+> 
+
+
+51. **Inconsistent Console Visibility Bug Report:**
+> SOmetime i see console sometime i not even after the conversion in progress.
+> 
+> 
+
+
+52. **Custom Script Practicality & Single-Chapter Modal Flow Evaluation:**
+> Hey how is this UI and UX . an d thepracticality
+> for uing the custom script ? in the audio setting there is option to select the custome script but which script woud it select .. ?? and also when we click on new version it automaticaly start converting without asking which langauge or which style an dif custome cript then which script ?
+> Theyere should be uniform and non confusing system to ceate that ..
+> DOn't forget to update DOCS .
+> 
+>
