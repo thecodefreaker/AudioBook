@@ -1,5 +1,5 @@
 # Production Dockerfile for EPUB AI Audiobook Generator
-FROM node:20-slim
+FROM node:22-slim
 
 # Install system dependencies (ffmpeg, ca-certificates, curl)
 RUN apt-get update && apt-get install -y --no-install-recommends \
