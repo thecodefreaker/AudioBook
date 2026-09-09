@@ -19,7 +19,7 @@ import { renderBookOverview, renderListenPane, initListenPane, setHeaderBook, re
 import { renderQuota, initQueuePanel, renderQueuePanel } from '../ui/queuePanel.js';
 
 import { startSingleChapterGeneration, startAudioFromExistingScript, startTranslateOnly, startGeneration, startBatchTranslateOnly, cancelChapterConversion, clearGenerationsForJob, cancelAllJobs, setupProgressTracking, checkInterruptedJobs, resumeInterruptedJob, syncQueueSnapshot, syncQuotaSnapshot } from '../generation/generationJobs.js';
-import { initReaderUi, previewChapter, renderReaderBody } from '../reader/readerUi.js';
+import { initReaderUi, previewChapter, renderReaderBody, renderReaderSidebarChapters } from '../reader/readerUi.js';
 import { initPlayer, stopPlayback, playAudioAtIndex, togglePlay } from '../audio/player.js';
 import { initUpload, setUploadStep, handleUpload, onBookParsing, onBookParsed, onBookError, resetUpload, UPLOAD_STEPS, isUploading } from '../workspace/upload.js';
 import { loadLibrary, renderLibrary } from '../workspace/library.js';
@@ -63,6 +63,11 @@ export function initRealtimeHandlers() {
         state.chapters = res.chapters;
         renderChapters();
         renderBookOverview();
+        renderReaderSidebarChapters();
+        const chIdx = data.chapterIndex ?? data.chapterIdx;
+        if (chIdx !== undefined && state.readerChapterIdx === chIdx) {
+          previewChapter(chIdx);
+        }
       }
     } catch (e) {
       console.warn('Failed to refresh chapters on custom_script:', e);
@@ -77,9 +82,29 @@ export function initRealtimeHandlers() {
         state.chapters = res.chapters;
         renderChapters();
         renderBookOverview();
+        renderReaderSidebarChapters();
+        const chIdx = data.chapterIndex ?? data.chapterIdx;
+        if (chIdx !== undefined && state.readerChapterIdx === chIdx) {
+          previewChapter(chIdx);
+        }
       }
     } catch (e) {
       console.warn('Failed to refresh chapters on updated:', e);
+    }
+  });
+
+  bind('bridge:status_updated', async (data) => {
+    if (data.bookId !== state.currentBookId) return;
+    try {
+      const res = await api.getChapters(state.currentBookId);
+      if (res && res.chapters) {
+        state.chapters = res.chapters;
+        renderChapters();
+        renderBookOverview();
+        renderReaderSidebarChapters();
+      }
+    } catch (e) {
+      console.warn('Failed to refresh chapters on bridge:status_updated:', e);
     }
   });
 

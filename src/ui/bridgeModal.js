@@ -5,6 +5,7 @@
  * script code copying, and real-time status of the ChatGPT reteller bridge.
  */
 import { showToast } from '../components/toast.js';
+import { socketService } from '../services/socket.js';
 
 let modalEl = null;
 let statusTimer = null;
@@ -12,6 +13,28 @@ let statusTimer = null;
 export function initBridgeModal() {
   modalEl = document.getElementById('chatgpt-bridge-modal');
   if (!modalEl) return;
+
+  // Real-time socket event listeners for instant UI updates
+  socketService.onKeyed('bridge-modal', 'chapter:custom_script', () => {
+    if (modalEl && !modalEl.classList.contains('hidden')) {
+      refreshBridgeStats();
+    }
+  });
+  socketService.onKeyed('bridge-modal', 'chapter:updated', () => {
+    if (modalEl && !modalEl.classList.contains('hidden')) {
+      refreshBridgeStats();
+    }
+  });
+  socketService.onKeyed('bridge-modal', 'chapter:complete', () => {
+    if (modalEl && !modalEl.classList.contains('hidden')) {
+      refreshBridgeStats();
+    }
+  });
+  socketService.onKeyed('bridge-modal', 'bridge:status_updated', () => {
+    if (modalEl && !modalEl.classList.contains('hidden')) {
+      refreshBridgeStats();
+    }
+  });
 
   // Toggle button in header
   const openBtn = document.getElementById('btn-chatgpt-bridge-toggle');
@@ -95,7 +118,7 @@ export function closeBridgeModal() {
   }
 }
 
-async function refreshBridgeStats() {
+export async function refreshBridgeStats() {
   try {
     const res = await fetch('/api/bridge/status');
     if (!res.ok) return;

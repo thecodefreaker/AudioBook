@@ -351,12 +351,19 @@ router.post('/submit-chapter', wrap(async (req, res) => {
       bookId: book.id,
       chapterId: chapter.id,
       chapterIndex: chapter.chapter_index,
+      chapterIdx: chapter.chapter_index,
       scriptId: saved.id,
     });
     io.to(`book:${book.id}`).emit('chapter:updated', {
       bookId: book.id,
       chapterIndex: chapter.chapter_index,
+      chapterIdx: chapter.chapter_index,
       hasCustomScript: true,
+    });
+    io.to('global').emit('bridge:status_updated', {
+      bookId: book.id,
+      chapterIndex: chapter.chapter_index,
+      chapterIdx: chapter.chapter_index,
     });
   }
 
@@ -415,7 +422,10 @@ router.post('/submit-chapter', wrap(async (req, res) => {
 // ---------------------------------------------------------------------------
 
 router.get('/userscript.user.js', (req, res) => {
-  const userscriptPath = path.join(__dirname, '../../public/chatgpt-audiobook-bridge.user.js');
+  let userscriptPath = path.join(__dirname, '../../public/chatgpt-audiobook-bridge.user.js');
+  if (!fs.existsSync(userscriptPath)) {
+    userscriptPath = path.join(__dirname, '../../dist/chatgpt-audiobook-bridge.user.js');
+  }
 
   if (!fs.existsSync(userscriptPath)) {
     return res.status(404).send('// Userscript file not found on server');

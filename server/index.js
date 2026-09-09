@@ -198,8 +198,9 @@ process.on('uncaughtException', (err) => {
 // ---------------------------------------------------------------------------
 // 6. Listen
 // ---------------------------------------------------------------------------
-httpServer.listen(config.port, () => {
-  logger.info(`🚀 Server running on http://localhost:${config.port}`);
+const HOST = process.env.HOST || '0.0.0.0';
+httpServer.listen(config.port, HOST, () => {
+  logger.info(`🚀 Server running on http://${HOST}:${config.port}`);
   logger.info(`📁 Data directory: ${config.dataDir}`);
 
   // Non-blocking: the app starts even if ffmpeg is missing, but the Convert

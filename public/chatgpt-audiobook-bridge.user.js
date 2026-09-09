@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Mozbot ChatGPT Audiobook Reteller Bridge
 // @namespace    https://github.com/antigravity/audiobook-generator
-// @version      2.7.1
+// @version      2.8.0
 // @description  Automates chapter retelling in ChatGPT Web and saves Hinglish scripts back to Audiobook Generator
 // @author       Mozbot AI
 // @match        https://chatgpt.com/*
@@ -54,8 +54,44 @@
     } catch {}
   };
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Background Worker: Prevents browser timer throttling when ChatGPT tab is inactive/minimized
+  let bgWorker = null;
+  function startBackgroundWorker() {
+    if (bgWorker || typeof Worker === 'undefined') return;
+    try {
+      const workerCode = `
+        self.onmessage = function(e) {
+          if (e.data === 'start') {
+            setInterval(function() {
+              self.postMessage('tick');
+            }, 1000);
+          }
+        };
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      bgWorker = new Worker(URL.createObjectURL(blob));
+      bgWorker.onmessage = () => {
+        window.dispatchEvent(new CustomEvent('mozbot_bg_tick'));
+      };
+      bgWorker.postMessage('start');
+    } catch (e) {
+      console.warn('[Mozbot] Background worker initialization skipped:', e.message);
+    }
+  }
+
   const State = {
     serverUrl: _getValue('mozbot_server_url', DEFAULT_SERVER_URL),
+    serverConnected: false,
     autoAudio: _getValue('mozbot_auto_audio', true),
     existingAudioAction: _getValue('mozbot_existing_audio_action', 'ask'), // 'ask', 'regenerate', 'skip'
     delaySeconds: _getValue('mozbot_delay_seconds', 5),
@@ -159,12 +195,15 @@
     try {
       const data = await apiRequest('GET', '/status');
       if (data && data.books) {
+        State.serverConnected = true;
         State.books = data.books;
         if (!State.selectedBookId && data.books.length > 0) {
           State.selectedBookId = data.books[0].id;
           _setValue('mozbot_book_id', State.selectedBookId);
         }
-        State.statusText = `Connected · ${data.books.length} book(s) in library`;
+        if (!State.running && !State.inCooldown) {
+          State.statusText = `Connected · ${data.books.length} book(s) in library`;
+        }
 
         // Fetch detailed chapter list for active book
         if (State.selectedBookId) {
@@ -175,7 +214,10 @@
         }
       }
     } catch (err) {
-      State.statusText = `⚠️ ${err.message}`;
+      State.serverConnected = false;
+      if (!State.running && !State.inCooldown) {
+        State.statusText = `⚠️ Offline (${err.message})`;
+      }
     }
     updateUi();
   }
@@ -246,6 +288,18 @@
       document.querySelector('textarea[placeholder*="ChatGPT"]') ||
       document.querySelector('textarea')
     );
+  }
+
+  async function waitForChatInput(timeoutMs = 25000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const inputEl = getChatInput();
+      if (inputEl && isElementVisible(inputEl)) {
+        return inputEl;
+      }
+      await sleep(300);
+    }
+    return getChatInput();
   }
 
   function isElementVisible(el) {
@@ -468,6 +522,7 @@
   }
 
   function setInputValue(inputEl, text) {
+    if (!inputEl) return;
     inputEl.focus();
 
     if (inputEl.tagName.toLowerCase() === 'textarea') {
@@ -476,18 +531,26 @@
       inputEl.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (inputEl.isContentEditable || inputEl.getAttribute('contenteditable') === 'true') {
       // Modern ProseMirror / contenteditable ChatGPT input
-      // Use execCommand for React / ProseMirror state synchronization
-      document.execCommand('selectAll', false, null);
-      document.execCommand('delete', false, null);
-      
-      const success = document.execCommand('insertText', false, text);
+      try {
+        document.execCommand('selectAll', false, null);
+        document.execCommand('delete', false, null);
+      } catch {}
+
+      let success = false;
+      try {
+        success = document.execCommand('insertText', false, text);
+      } catch {}
+
       if (!success) {
         inputEl.innerHTML = '';
         const p = document.createElement('p');
         p.textContent = text;
         inputEl.appendChild(p);
       }
-      inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+
+      inputEl.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
+      inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
+      inputEl.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
 
@@ -778,6 +841,8 @@
     State.cooldownEndsAt = Date.now() + totalSeconds * 1000;
     _setValue('mozbot_cooldown_ends_at', State.cooldownEndsAt);
     log(`☕ Entering a ${Math.round(totalSeconds / 60)}-minute anti-spam pause to protect ChatGPT rate limits...`);
+    window.dispatchEvent(new CustomEvent('mozbot_state_change'));
+    updateUi();
 
     while (State.running && State.inCooldown && Date.now() < State.cooldownEndsAt) {
       const remainingSec = Math.max(0, Math.round((State.cooldownEndsAt - Date.now()) / 1000));
@@ -805,8 +870,8 @@
     }
   }
 
-  async function runStep() {
-    if (!State.running) return;
+  async function runStepOnce() {
+    if (!State.running) return 'stopped';
 
     let targetLabel = 'next chapter';
     let targetNum = null;
@@ -855,8 +920,9 @@
       State.nextChapterInfo = null;
       State.currentStage = 'idle';
       State.statusText = '🎉 Scope Completed!';
+      window.dispatchEvent(new CustomEvent('mozbot_state_change'));
       updateUi();
-      return;
+      return 'done';
     }
 
     State.currentChapter = data;
@@ -872,7 +938,8 @@
         log(`⏭️ Chapter ${data.chapterIndex} already has audio. Skipping per settings...`);
         State.processedChapters.add(data.chapterIndex);
         _setValue('mozbot_processed_chapters', Array.from(State.processedChapters));
-        return runStep();
+        updateUi();
+        return 'continue';
       } else if (State.existingAudioAction === 'ask') {
         log(`⚠️ Chapter ${data.chapterIndex} has existing audio. Asking user choice...`);
         const choice = await promptAudioConflict(data.chapterIndex, data.chapterTitle);
@@ -880,7 +947,8 @@
           log(`⏭️ Skipped Chapter ${data.chapterIndex} (User requested skip).`);
           State.processedChapters.add(data.chapterIndex);
           _setValue('mozbot_processed_chapters', Array.from(State.processedChapters));
-          return runStep();
+          updateUi();
+          return 'continue';
         } else {
           log(`🔄 Regenerating Chapter ${data.chapterIndex} per user choice...`);
         }
@@ -901,10 +969,12 @@
 
     if (shouldNewChat) {
       State.currentStage = 'newchat';
+      State.statusText = '✨ Starting fresh chat session...';
+      updateUi();
       log(`🔄 Processed ${State.chaptersInCurrentChat} chapter(s) in active chat. Starting NEW CHAT...`);
       const navRes = await openNewChat();
       if (navRes === 'navigating') {
-        return; // Page is reloading to root, init() will auto-resume in fresh session
+        return 'navigating'; // Page is reloading to root, init() will auto-resume in fresh session
       }
       await sleep(1000);
     }
@@ -912,39 +982,54 @@
     // Capture assistant message count before sending prompt
     const initialAssistantCount = getAllAssistantMessages().length;
 
-    // 3. Paste into chat input
-    const inputEl = getChatInput();
+    // 3. Paste into chat input (wait up to 15 seconds for composer to be active)
+    const inputEl = await waitForChatInput(15000);
     if (!inputEl) {
       throw new Error('Could not find ChatGPT input box. Is the chat page fully loaded?');
     }
 
     State.currentStage = 'pasting';
+    State.statusText = `Pasting prompt for Ch ${data.chapterIndex}...`;
+    updateUi();
     log(`Pasting prompt for Chapter ${data.chapterIndex}...`);
     setInputValue(inputEl, data.prompt);
     await sleep(600);
 
-    // 4. Wait briefly for Send button to be enabled and click Send
+    // 4. Wait up to 10s for Send button to be enabled and click Send
     let sendBtn = null;
     const sendWaitStart = Date.now();
-    while (Date.now() - sendWaitStart < 2500) {
+    while (Date.now() - sendWaitStart < 10000) {
       sendBtn = getSendButton();
       if (sendBtn && !sendBtn.disabled && sendBtn.getAttribute('aria-disabled') !== 'true') {
         break;
       }
-      await sleep(200);
+      await sleep(250);
     }
 
     if (sendBtn && !sendBtn.disabled && sendBtn.getAttribute('aria-disabled') !== 'true') {
+      sendBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       sendBtn.click();
+      sendBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     } else {
       // Fallback: Dispatch Enter key
-      inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+      inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+      inputEl.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+      inputEl.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+      if (sendBtn) {
+        sendBtn.removeAttribute('disabled');
+        sendBtn.setAttribute('aria-disabled', 'false');
+        sendBtn.click();
+      }
     }
 
     await sleep(1000);
 
     // 5. Wait for ChatGPT to finish generating
     State.currentStage = 'generating';
+    State.statusText = `Waiting for response on Ch ${data.chapterIndex}...`;
+    updateUi();
     await waitForGenerationComplete(initialAssistantCount);
 
     // 6. Extract the retold text
@@ -954,6 +1039,8 @@
     }
 
     State.currentStage = 'saving';
+    State.statusText = `Saving Ch ${data.chapterIndex} (${retoldText.length} chars)...`;
+    updateUi();
     log(`Received retold text (${retoldText.length} characters). Saving to app...`);
 
     // 7. Submit back to Audiobook Generator
@@ -989,8 +1076,9 @@
       State.nextChapterInfo = null;
       State.currentStage = 'idle';
       State.statusText = `✅ Chapter ${data.chapterIndex} Done!`;
+      window.dispatchEvent(new CustomEvent('mozbot_state_change'));
       updateUi();
-      return;
+      return 'done';
     }
 
     // Check Anti-Spam Batch Cooldown (e.g. pause for 30 minutes after every 20 chapters)
@@ -999,7 +1087,7 @@
       State.consecutiveConvertedCount = 0;
       _setValue('mozbot_consecutive_converted', 0);
       await runCooldown((State.cooldownDurationMinutes || 30) * 60);
-      if (!State.running) return;
+      if (!State.running) return 'stopped';
     }
 
     // 8. Delay before next chapter
@@ -1011,7 +1099,48 @@
         updateUi();
         await sleep(1000);
       }
-      runStep();
+    }
+    return 'continue';
+  }
+
+  async function runAutomationLoop() {
+    let consecutiveErrors = 0;
+    const MAX_RETRIES = 3;
+
+    while (State.running) {
+      try {
+        const res = await runStepOnce();
+        consecutiveErrors = 0;
+        if (res === 'done' || res === 'stopped' || !State.running) {
+          break;
+        }
+        if (res === 'navigating') {
+          return; // page is reloading to root, init() will auto-resume in fresh session
+        }
+      } catch (err) {
+        if (!State.running) break;
+        consecutiveErrors++;
+        log(`⚠️ Step error (attempt ${consecutiveErrors}/${MAX_RETRIES}): ${err.message}`);
+
+        if (consecutiveErrors >= MAX_RETRIES) {
+          log(`❌ Automation stopped after ${MAX_RETRIES} consecutive errors: ${err.message}`);
+          State.running = false;
+          _setValue('mozbot_running', false);
+          State.currentStage = 'idle';
+          State.statusText = `Stopped: ${err.message}`;
+          window.dispatchEvent(new CustomEvent('mozbot_state_change'));
+          updateUi();
+          break;
+        }
+
+        const retryDelaySec = consecutiveErrors * 5;
+        for (let s = retryDelaySec; s > 0; s--) {
+          if (!State.running) break;
+          State.statusText = `⚠️ Error: Retrying in ${s}s... (${consecutiveErrors}/${MAX_RETRIES})`;
+          updateUi();
+          await sleep(1000);
+        }
+      }
     }
   }
 
@@ -1024,11 +1153,16 @@
     _setValue('mozbot_processed_chapters', []);
     State.chaptersInCurrentChat = 0;
     _setValue('mozbot_chapters_in_chat', 0);
+    State.consecutiveConvertedCount = 0;
+    _setValue('mozbot_consecutive_converted', 0);
     State.running = true;
     _setValue('mozbot_running', true);
     State.currentStage = 'fetching';
     State.statusText = 'Starting automation loop...';
+    window.dispatchEvent(new CustomEvent('mozbot_state_change'));
     updateUi();
+
+    startBackgroundWorker();
 
     if (State.newChatStrategy !== 'off' && (window.location.pathname !== '/' || getAllAssistantMessages().length > 0)) {
       log('Starting batch range in fresh chat session...');
@@ -1038,24 +1172,20 @@
       }
       await sleep(1000);
     }
-    try {
-      await runStep();
-    } catch (err) {
-      log(`❌ Error: ${err.message}`);
-      State.running = false;
-      _setValue('mozbot_running', false);
-      State.currentStage = 'idle';
-      State.statusText = `Stopped: ${err.message}`;
-      updateUi();
-    }
+
+    await runAutomationLoop();
   }
 
   function stopAutomation() {
     State.running = false;
+    State.inCooldown = false;
+    State.cooldownEndsAt = 0;
     _setValue('mozbot_running', false);
+    _setValue('mozbot_cooldown_ends_at', 0);
     State.currentStage = 'idle';
     State.statusText = 'Paused';
     log('Automation stopped by user.');
+    window.dispatchEvent(new CustomEvent('mozbot_state_change'));
     updateUi();
   }
 
@@ -1412,6 +1542,32 @@
         border-color: #60a5fa !important;
         color: #ffffff !important;
         transform: translateY(-1px) !important;
+      }
+      /* Live Status Bar */
+      #mozbot-bridge-hud .mozbot-status-bar {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        background: rgba(0, 0, 0, 0.45) !important;
+        border: 1px solid rgba(59, 130, 246, 0.28) !important;
+        border-radius: 9px !important;
+        padding: 8px 12px !important;
+        font-size: 11.5px !important;
+        color: #93c5fd !important;
+        font-weight: 550 !important;
+        line-height: 1.35 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+        overflow: hidden !important;
+      }
+      #mozbot-bridge-hud .mozbot-status-bar.running {
+        border-color: rgba(34, 197, 94, 0.35) !important;
+        color: #86efac !important;
+        background: rgba(34, 197, 94, 0.08) !important;
+      }
+      #mozbot-bridge-hud .mozbot-status-bar.warning {
+        border-color: rgba(234, 179, 8, 0.4) !important;
+        color: #fde047 !important;
+        background: rgba(234, 179, 8, 0.08) !important;
       }
       /* Pill / Minimized Mode */
       #mozbot-bridge-hud .mozbot-pill {
@@ -1818,9 +1974,9 @@
       <div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <label class="mozbot-label" style="margin-bottom:0;">Target Book Library</label>
-          <span style="font-size:11px; color:${State.statusText.startsWith('Connected') ? '#4ade80' : '#facc15'}; font-weight:600; display:flex; align-items:center; gap:6px;">
-            <span>${State.statusText.startsWith('Connected') ? '🟢' : '⚠️'}</span>
-            <span>${State.statusText.startsWith('Connected') ? 'Connected' : 'Offline'}</span>
+          <span id="mozbot-connection-badge" style="font-size:11px; color:${State.serverConnected ? '#4ade80' : '#facc15'}; font-weight:600; display:flex; align-items:center; gap:6px;">
+            <span id="mozbot-connection-dot">${State.serverConnected ? '🟢' : '⚠️'}</span>
+            <span id="mozbot-connection-status">${State.serverConnected ? 'Connected' : 'Offline'}</span>
           </span>
         </div>
         <select id="mozbot-book-select" class="mozbot-select">
@@ -1883,6 +2039,12 @@
 
         <div id="mozbot-hero-title" class="mozbot-hero-title" title="${State.currentChapter ? `Ch ${State.currentChapter.chapterIndex}: ${State.currentChapter.chapterTitle || 'Untitled'}` : chTitleText}">
           ${chIndexBadge} <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chTitleText}</span>
+        </div>
+
+        <!-- Live Activity Status Bar inside cockpit -->
+        <div id="mozbot-live-status-bar" class="mozbot-status-bar ${State.running ? 'running' : State.inCooldown ? 'warning' : ''}" style="margin: 4px 0;">
+          <span class="mozbot-status-dot ${State.inCooldown ? 'mozbot-dot-amber' : State.running ? 'mozbot-dot-green' : 'mozbot-dot-idle'}" style="width:7px; height:7px; border-radius:50%; flex-shrink:0;"></span>
+          <span id="mozbot-live-status-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtml(State.statusText)}</span>
         </div>
 
         <div class="mozbot-hero-grid">
@@ -2176,6 +2338,24 @@
             progLabel.innerHTML = `<strong>${scripted}</strong> / ${total} chapters (${percent}%)`;
           }
 
+          // Live Activity Status Bar update
+          const statusBar = document.getElementById('mozbot-live-status-bar');
+          const statusTextEl = document.getElementById('mozbot-live-status-text');
+          if (statusBar && statusTextEl) {
+            statusBar.className = `mozbot-status-bar ${State.running ? 'running' : State.inCooldown ? 'warning' : ''}`;
+            statusTextEl.innerText = State.statusText;
+          }
+
+          // Live Connection indicator update
+          const connBadge = document.getElementById('mozbot-connection-badge');
+          const connDot = document.getElementById('mozbot-connection-dot');
+          const connStatus = document.getElementById('mozbot-connection-status');
+          if (connBadge && connDot && connStatus) {
+            connBadge.style.color = State.serverConnected ? '#4ade80' : '#facc15';
+            connDot.innerText = State.serverConnected ? '🟢' : '⚠️';
+            connStatus.innerText = State.serverConnected ? 'Connected' : 'Offline';
+          }
+
           const cooldownTimer = document.getElementById('mozbot-live-cooldown-timer');
           if (cooldownTimer && State.inCooldown) {
             cooldownTimer.innerText = State.statusText.replace('☕ Anti-spam break ', '');
@@ -2193,6 +2373,41 @@
               }
             } else if (heroRightEl.innerHTML.includes('mozbot-force-done-btn')) {
               heroRightEl.innerHTML = '<span style="font-size:9.5px; color:#8b949e; font-weight:700; letter-spacing:0.5px;">COCKPIT</span>';
+            }
+          }
+        } else if (State.activeTab === 'chapters') {
+          const container = document.getElementById('mozbot-chapter-list-container');
+          if (container) {
+            const query = (State.chapterSearchQuery || '').toLowerCase().trim();
+            const filtered = State.chapterList.filter((ch) => {
+              if (!query) return true;
+              return (
+                String(ch.chapterIndex).includes(query) ||
+                (ch.title || '').toLowerCase().includes(query)
+              );
+            });
+            if (filtered.length === 0) {
+              container.innerHTML = '<div style="font-size:11.5px; color:#8b949e; text-align:center; padding:28px;">No chapters found matching search.</div>';
+            } else {
+              container.innerHTML = filtered
+                .map((ch) => {
+                  const isCurrent = State.currentChapter && State.currentChapter.chapterIndex === ch.chapterIndex && State.running;
+                  return renderChapterRow(ch, isCurrent);
+                })
+                .join('');
+              container.querySelectorAll('.mozbot-ch-row').forEach((row) => {
+                row.addEventListener('click', () => {
+                  const idx = row.getAttribute('data-index');
+                  State.mode = 'single';
+                  State.singleChapterIndex = idx;
+                  _setValue('mozbot_mode', 'single');
+                  _setValue('mozbot_single_ch', idx);
+                  State.activeTab = 'studio';
+                  _setValue('mozbot_active_tab', 'studio');
+                  log(`🎯 Targeted Chapter ${idx} from Chapter Queue.`);
+                  updateUi();
+                });
+              });
             }
           }
         } else if (State.activeTab === 'logs') {
@@ -2227,7 +2442,7 @@
             <div class="mozbot-header-left">
               <span class="mozbot-drag-handle">⋮⋮</span>
               <span class="mozbot-header-title">⚡ Mozbot Studio</span>
-              <span class="mozbot-version-tag">v2.7.1</span>
+              <span class="mozbot-version-tag">v2.8.0</span>
             </div>
             <div class="mozbot-header-actions">
               <button id="mozbot-header-refresh" class="mozbot-icon-btn" title="Refresh server data">↻</button>
@@ -2484,6 +2699,7 @@
       return;
     }
 
+    startBackgroundWorker();
     createUi();
     refreshServerStatus();
 
@@ -2494,8 +2710,12 @@
       }
     }, 1000);
 
-    // Refresh book stats periodically
-    setInterval(refreshServerStatus, 30000);
+    // Adaptive Polling: 4s when running, 15s when idle
+    let pollInterval = setInterval(refreshServerStatus, State.running ? 4000 : 15000);
+    window.addEventListener('mozbot_state_change', () => {
+      clearInterval(pollInterval);
+      pollInterval = setInterval(refreshServerStatus, State.running ? 4000 : 15000);
+    });
 
     // Auto-resume cooldown or batch conversion
     const wasRunning = Boolean(_getValue('mozbot_running', false));
@@ -2505,9 +2725,12 @@
       const remainingSec = Math.round((savedCooldownEnds - Date.now()) / 1000);
       log(`☕ Resuming remaining ${Math.round(remainingSec / 60)}-minute anti-spam cooldown...`);
       State.running = true;
-      runCooldown(remainingSec).then(() => {
-        if (State.running) runStep();
-      }).catch((err) => {
+      (async () => {
+        await runCooldown(remainingSec);
+        if (State.running) {
+          await runAutomationLoop();
+        }
+      })().catch((err) => {
         log(`❌ Error during cooldown resume: ${err.message}`);
       });
       return;
@@ -2516,18 +2739,23 @@
     if (wasRunning && !State.running) {
       log('⚡ Resuming batch conversion in fresh chat session...');
       State.running = true;
-      setTimeout(() => {
-        runStep().catch((err) => {
-          log(`❌ Error after resume: ${err.message}`);
-          State.running = false;
-          _setValue('mozbot_running', false);
-          State.statusText = `Stopped: ${err.message}`;
-          updateUi();
-        });
-      }, 2000);
+      (async () => {
+        State.statusText = 'Waiting for ChatGPT interface to hydrate...';
+        updateUi();
+        await waitForChatInput(30000);
+        await sleep(1500);
+        await runAutomationLoop();
+      })().catch((err) => {
+        log(`❌ Error after resume: ${err.message}`);
+        State.running = false;
+        _setValue('mozbot_running', false);
+        State.statusText = `Stopped: ${err.message}`;
+        window.dispatchEvent(new CustomEvent('mozbot_state_change'));
+        updateUi();
+      });
     }
 
-    console.log('%c⚡ Mozbot Audiobook Bridge loaded successfully! Controller mounted at bottom-right.', 'background: #238636; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+    console.log('%c⚡ Mozbot Audiobook Bridge v2.8.0 loaded successfully! Controller mounted at bottom-right.', 'background: #238636; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {

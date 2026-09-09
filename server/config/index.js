@@ -18,11 +18,11 @@ const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
 
   // Paths
-  dataDir: path.resolve(__dirname, '../../data'),
-  uploadsDir: path.resolve(__dirname, '../../data/uploads'),
-  audioDir: path.resolve(__dirname, '../../data/audio'),
-  coversDir: path.resolve(__dirname, '../../data/covers'),
-  dbPath: path.resolve(__dirname, '../../data/database.sqlite'),
+  dataDir: process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve(__dirname, '../../data'),
+  get uploadsDir() { return path.join(this.dataDir, 'uploads'); },
+  get audioDir() { return path.join(this.dataDir, 'audio'); },
+  get coversDir() { return path.join(this.dataDir, 'covers'); },
+  get dbPath() { return path.join(this.dataDir, 'database.sqlite'); },
 
   // Upload limits
   maxFileSize: 100 * 1024 * 1024, // 100MB
