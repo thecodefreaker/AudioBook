@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Mozbot ChatGPT Audiobook Reteller Bridge
 // @namespace    https://github.com/antigravity/audiobook-generator
-// @version      2.8.0
+// @version      2.9.0
 // @description  Automates chapter retelling in ChatGPT Web and saves Hinglish scripts back to Audiobook Generator
 // @author       Mozbot AI
 // @match        https://chatgpt.com/*
@@ -525,33 +525,90 @@
     if (!inputEl) return;
     inputEl.focus();
 
-    if (inputEl.tagName.toLowerCase() === 'textarea') {
-      inputEl.value = text;
+    if (inputEl.tagName && inputEl.tagName.toLowerCase() === 'textarea') {
+      const proto = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+      if (proto && proto.set) {
+        proto.set.call(inputEl, text);
+      } else {
+        inputEl.value = text;
+      }
       inputEl.dispatchEvent(new Event('input', { bubbles: true }));
       inputEl.dispatchEvent(new Event('change', { bubbles: true }));
-    } else if (inputEl.isContentEditable || inputEl.getAttribute('contenteditable') === 'true') {
-      // Modern ProseMirror / contenteditable ChatGPT input
+      return;
+    }
+
+    // Modern ProseMirror / contenteditable ChatGPT input
+    try {
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(inputEl);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch {}
+
+    let pasteWorked = false;
+
+    // Strategy 1: Dispatch synthetic ClipboardEvent ('paste') with DataTransfer
+    // ProseMirror's view.handlePaste natively converts this into a rich transaction
+    try {
+      const dt = new DataTransfer();
+      dt.setData('text/plain', text);
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dt,
+      });
+      inputEl.dispatchEvent(pasteEvent);
+      const currentContent = (inputEl.innerText || inputEl.textContent || '').trim();
+      if (currentContent.length >= Math.min(text.trim().length * 0.8, 100)) {
+        pasteWorked = true;
+      }
+    } catch {}
+
+    // Strategy 2: Native execCommand('insertText')
+    if (!pasteWorked) {
+      try {
+        document.execCommand('selectAll', false, null);
+        pasteWorked = document.execCommand('insertText', false, text);
+      } catch {}
+    }
+
+    // Strategy 3: Chunked execCommand fallback if chapter is huge (10k+ chars)
+    if (!pasteWorked && text.length > 2000) {
       try {
         document.execCommand('selectAll', false, null);
         document.execCommand('delete', false, null);
+        const chunkSize = 1500;
+        let allOk = true;
+        for (let i = 0; i < text.length; i += chunkSize) {
+          const chunk = text.slice(i, i + chunkSize);
+          const ok = document.execCommand('insertText', false, chunk);
+          if (!ok) { allOk = false; break; }
+        }
+        if (allOk) pasteWorked = true;
       } catch {}
+    }
 
-      let success = false;
-      try {
-        success = document.execCommand('insertText', false, text);
-      } catch {}
-
-      if (!success) {
+    // Strategy 4: Fallback DOM paragraph injection
+    if (!pasteWorked) {
+      const currentContent = (inputEl.innerText || inputEl.textContent || '').trim();
+      if (currentContent.length < 50) {
         inputEl.innerHTML = '';
         const p = document.createElement('p');
         p.textContent = text;
         inputEl.appendChild(p);
       }
-
-      inputEl.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
-      inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
-      inputEl.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
+    // Fire input lifecycle events to sync React state
+    try {
+      inputEl.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertFromPaste', data: text }));
+    } catch {}
+    try {
+      inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: text }));
+    } catch {}
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   function getLastAssistantMessage() {
@@ -614,10 +671,17 @@
         return true;
       }
 
-      // Check for rate limit or errors
-      const errorNotice = document.querySelector('.text-red-500, [data-testid="error-message"], [class*="errorMessage"]');
-      if (errorNotice && isElementVisible(errorNotice) && (errorNotice.innerText.includes('limit') || errorNotice.innerText.includes('error') || errorNotice.innerText.includes('capacity'))) {
-        throw new Error(`ChatGPT Error: ${errorNotice.innerText}`);
+      // Check for rate limit or errors in active turn or composer form (avoid matching global page badges)
+      const errorNotice = (
+        (currentMsg && currentMsg.querySelector('[data-testid="error-message"], [class*="errorMessage"], .text-red-500')) ||
+        document.querySelector('form [data-testid="error-message"], form [class*="errorMessage"]') ||
+        document.querySelector('main [data-testid="error-message"]')
+      );
+      if (errorNotice && isElementVisible(errorNotice)) {
+        const errText = (errorNotice.innerText || '').toLowerCase();
+        if (errText.includes('rate limit') || errText.includes('too many requests') || errText.includes('error in message') || errText.includes('something went wrong') || errText.includes('capacity')) {
+          throw new Error(`ChatGPT Error: ${errorNotice.innerText}`);
+        }
       }
 
       // Check if ChatGPT stopped early with a "Continue generating" button
@@ -1006,14 +1070,22 @@
       await sleep(250);
     }
 
+    const form = inputEl.closest('form');
+
     if (sendBtn && !sendBtn.disabled && sendBtn.getAttribute('aria-disabled') !== 'true') {
       sendBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       sendBtn.click();
       sendBtn.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
       sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      if (form && typeof form.requestSubmit === 'function') {
+        try { form.requestSubmit(sendBtn); } catch {}
+      }
     } else {
-      // Fallback: Dispatch Enter key
+      // Fallback: Try form requestSubmit or Enter key
+      if (form && typeof form.requestSubmit === 'function') {
+        try { form.requestSubmit(); } catch {}
+      }
       inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
       inputEl.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
       inputEl.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
@@ -1038,26 +1110,30 @@
       throw new Error('Retold response from ChatGPT was empty or too short');
     }
 
-    State.currentStage = 'saving';
-    State.statusText = `Saving Ch ${data.chapterIndex} (${retoldText.length} chars)...`;
-    updateUi();
-    log(`Received retold text (${retoldText.length} characters). Saving to app...`);
+    // 7. Submit back to Audiobook Generator (if not already saved via manual "⚡ Save Now" button)
+    if (!State.processedChapters.has(data.chapterIndex)) {
+      State.currentStage = 'saving';
+      State.statusText = `Saving Ch ${data.chapterIndex} (${retoldText.length} chars)...`;
+      updateUi();
+      log(`Received retold text (${retoldText.length} characters). Saving to app...`);
 
-    // 7. Submit back to Audiobook Generator
-    const submitRes = await apiRequest('POST', '/submit-chapter', {
-      bookId: data.bookId,
-      chapterIndex: data.chapterIndex,
-      content: retoldText,
-      autoAudio: State.autoAudio,
-    });
+      const submitRes = await apiRequest('POST', '/submit-chapter', {
+        bookId: data.bookId,
+        chapterIndex: data.chapterIndex,
+        content: retoldText,
+        autoAudio: State.autoAudio,
+      });
 
-    if (!submitRes.ok) {
-      throw new Error(submitRes.error || 'Failed to save chapter to app');
+      if (!submitRes.ok) {
+        throw new Error(submitRes.error || 'Failed to save chapter to app');
+      }
+
+      log(`✅ Chapter ${data.chapterIndex} saved! ${State.autoAudio ? '(Audio generation started)' : ''}`);
+      State.processedChapters.add(data.chapterIndex);
+      _setValue('mozbot_processed_chapters', Array.from(State.processedChapters));
+    } else {
+      log(`✅ Chapter ${data.chapterIndex} was already saved via manual Save.`);
     }
-
-    log(`✅ Chapter ${data.chapterIndex} saved! ${State.autoAudio ? '(Audio generation started)' : ''}`);
-    State.processedChapters.add(data.chapterIndex);
-    _setValue('mozbot_processed_chapters', Array.from(State.processedChapters));
 
     State.chaptersInCurrentChat++;
     _setValue('mozbot_chapters_in_chat', State.chaptersInCurrentChat);
@@ -1913,6 +1989,97 @@
     }
   }
 
+  function skipCooldown() {
+    log('⚡ User skipped cooldown break. Resuming immediately...');
+    State.inCooldown = false;
+    State.cooldownEndsAt = 0;
+    _setValue('mozbot_cooldown_ends_at', 0);
+    updateUi();
+  }
+
+  function renderCooldownBannerHtml() {
+    if (!State.inCooldown) return '';
+    return `
+      <div id="mozbot-live-cooldown-banner" style="background:linear-gradient(135deg, rgba(234,179,8,0.15), rgba(202,138,4,0.08)); border:1px solid rgba(234,179,8,0.45); border-radius:13px; padding:16px 18px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.25); margin-bottom:12px;">
+        <div style="font-weight:700; color:#facc15; font-size:12.5px; margin-bottom:5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>☕ Anti-Spam Rest Active</span>
+        </div>
+        <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">Pausing after ${State.cooldownEveryChapters} chapters to shield ChatGPT rate limits.</div>
+        <div id="mozbot-live-cooldown-timer" style="font-size:16px; font-weight:700; color:#60a5fa; font-family:ui-monospace, monospace; margin-bottom:12px; letter-spacing:0.5px;">${State.statusText.replace('☕ Anti-spam break ', '')}</div>
+        <button id="mozbot-skip-cooldown-btn" style="background:linear-gradient(180deg, #22c55e 0%, #16a34a 100%); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 18px; font-size:11.5px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(22,163,74,0.3); transition:all 0.15s ease;">⚡ Skip Break & Resume Now</button>
+      </div>
+    `;
+  }
+
+  function shouldShowSaveNowButton() {
+    const lastMsg = getLastAssistantMessage();
+    return Boolean((lastMsg && lastMsg.length >= 50) || (State.running && (State.currentStage === 'generating' || State.currentOutputChars > 50)));
+  }
+
+  async function saveCurrentResponseNow() {
+    const retoldText = getLastAssistantMessage();
+    if (!retoldText || retoldText.length < 50) {
+      alert('⚠️ No ChatGPT response detected to save (needs at least 50 characters). Please wait for ChatGPT to start responding or check the chat.');
+      return;
+    }
+
+    const currentBook = State.books.find((b) => b.id === State.selectedBookId);
+    if (!currentBook) {
+      alert('⚠️ Please select a target book in the library dropdown first.');
+      return;
+    }
+
+    // Determine target chapter index
+    let chNum = 1;
+    if (State.currentChapter && State.currentChapter.chapterIndex) {
+      chNum = State.currentChapter.chapterIndex;
+    } else if (State.mode === 'single' && State.singleChapterIndex !== '') {
+      chNum = parseInt(State.singleChapterIndex, 10) || 1;
+    } else if (State.fromChapter !== '') {
+      chNum = parseInt(State.fromChapter, 10) || 1;
+    }
+
+    const prevStage = State.currentStage;
+    State.currentStage = 'saving';
+    State.statusText = `💾 Saving Ch ${chNum} (${retoldText.length} chars)...`;
+    updateUi();
+    log(`⚡ "Save Now" triggered: Submitting Chapter ${chNum} (${retoldText.length} chars)...`);
+
+    try {
+      const res = await apiRequest('POST', '/submit-chapter', {
+        bookId: currentBook.id,
+        chapterIndex: chNum,
+        content: retoldText,
+        autoAudio: State.autoAudio,
+      });
+
+      if (!res.ok) {
+        throw new Error(res.error || 'Failed to save chapter');
+      }
+
+      log(`✅ Chapter ${chNum} successfully saved via "Save Now"! ${State.autoAudio ? '(Audio generation started)' : ''}`);
+      State.processedChapters.add(chNum);
+      _setValue('mozbot_processed_chapters', Array.from(State.processedChapters));
+
+      State.statusText = `✅ Chapter ${chNum} saved!`;
+      refreshServerStatus();
+
+      // If actively running in generator loop, trigger forceComplete so the loop advances to next chapter
+      if (State.running) {
+        State.forceComplete = true;
+      } else {
+        State.currentStage = 'idle';
+      }
+      updateUi();
+    } catch (err) {
+      log(`❌ Manual save failed: ${err.message}`);
+      State.statusText = `❌ Save failed: ${err.message}`;
+      State.currentStage = prevStage;
+      updateUi();
+      alert(`Could not save chapter ${chNum}: ${err.message}`);
+    }
+  }
+
   function getStageBadgeInfo() {
     if (State.inCooldown) {
       return { text: '☕ ANTI-SPAM BREAK', cls: 'cooldown', dot: 'mozbot-dot-amber' };
@@ -2005,21 +2172,10 @@
           : ''
       }
 
-      <!-- Anti-Spam Break Banner (Active when inCooldown) -->
-      ${
-        State.inCooldown
-          ? `
-        <div id="mozbot-live-cooldown-banner" style="background:linear-gradient(135deg, rgba(234,179,8,0.15), rgba(202,138,4,0.08)); border:1px solid rgba(234,179,8,0.45); border-radius:13px; padding:16px 18px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-          <div style="font-weight:700; color:#facc15; font-size:12.5px; margin-bottom:5px; display:flex; align-items:center; justify-content:center; gap:6px;">
-            <span>☕ Anti-Spam Rest Active</span>
-          </div>
-          <div style="font-size:11px; color:#cbd5e1; margin-bottom:10px; line-height:1.4;">Pausing after ${State.cooldownEveryChapters} chapters to shield ChatGPT rate limits.</div>
-          <div id="mozbot-live-cooldown-timer" style="font-size:16px; font-weight:700; color:#60a5fa; font-family:ui-monospace, monospace; margin-bottom:12px; letter-spacing:0.5px;">${State.statusText.replace('☕ Anti-spam break ', '')}</div>
-          <button id="mozbot-skip-cooldown-btn" style="background:linear-gradient(180deg, #22c55e 0%, #16a34a 100%); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 18px; font-size:11.5px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(22,163,74,0.3); transition:all 0.15s ease;">⚡ Skip Break & Resume Now</button>
-        </div>
-      `
-          : ''
-      }
+      <!-- Anti-Spam Break Banner Container -->
+      <div id="mozbot-cooldown-container">
+        ${renderCooldownBannerHtml()}
+      </div>
 
       <!-- Hero Live Monitor Card -->
       <div class="mozbot-hero-card">
@@ -2030,8 +2186,8 @@
           </div>
           <div id="mozbot-hero-top-right" style="display:flex; align-items:center; gap:6px;">
             ${
-              State.running && (State.currentStage === 'generating' || State.currentOutputChars > 50)
-                ? `<button id="mozbot-force-done-btn" class="mozbot-force-btn" title="If ChatGPT response has finished, click to proceed immediately to save">⚡ Save Now</button>`
+              shouldShowSaveNowButton()
+                ? `<button id="mozbot-force-done-btn" class="mozbot-force-btn" title="Save current ChatGPT response to chapter now">⚡ Save Now</button>`
                 : '<span style="font-size:9.5px; color:#8b949e; font-weight:700; letter-spacing:0.5px;">COCKPIT</span>'
             }
           </div>
@@ -2043,7 +2199,7 @@
 
         <!-- Live Activity Status Bar inside cockpit -->
         <div id="mozbot-live-status-bar" class="mozbot-status-bar ${State.running ? 'running' : State.inCooldown ? 'warning' : ''}" style="margin: 4px 0;">
-          <span class="mozbot-status-dot ${State.inCooldown ? 'mozbot-dot-amber' : State.running ? 'mozbot-dot-green' : 'mozbot-dot-idle'}" style="width:7px; height:7px; border-radius:50%; flex-shrink:0;"></span>
+          <span id="mozbot-live-status-dot" class="mozbot-status-dot ${State.inCooldown ? 'mozbot-dot-amber' : State.running ? 'mozbot-dot-green' : 'mozbot-dot-idle'}" style="width:7px; height:7px; border-radius:50%; flex-shrink:0;"></span>
           <span id="mozbot-live-status-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtml(State.statusText)}</span>
         </div>
 
@@ -2102,7 +2258,7 @@
       </div>
 
       <!-- Action Primary CTA Button -->
-      <div style="margin-top:6px;">
+      <div id="mozbot-cta-container" style="margin-top:6px;">
         ${
           !State.running
             ? `<button id="mozbot-start-btn" class="mozbot-cta-start">▶ Start Auto-Retell</button>`
@@ -2340,10 +2496,14 @@
 
           // Live Activity Status Bar update
           const statusBar = document.getElementById('mozbot-live-status-bar');
+          const statusDot = document.getElementById('mozbot-live-status-dot');
           const statusTextEl = document.getElementById('mozbot-live-status-text');
           if (statusBar && statusTextEl) {
             statusBar.className = `mozbot-status-bar ${State.running ? 'running' : State.inCooldown ? 'warning' : ''}`;
             statusTextEl.innerText = State.statusText;
+            if (statusDot) {
+              statusDot.className = `mozbot-status-dot ${State.inCooldown ? 'mozbot-dot-amber' : State.running ? 'mozbot-dot-green' : 'mozbot-dot-idle'}`;
+            }
           }
 
           // Live Connection indicator update
@@ -2356,23 +2516,51 @@
             connStatus.innerText = State.serverConnected ? 'Connected' : 'Offline';
           }
 
-          const cooldownTimer = document.getElementById('mozbot-live-cooldown-timer');
-          if (cooldownTimer && State.inCooldown) {
-            cooldownTimer.innerText = State.statusText.replace('☕ Anti-spam break ', '');
+          // Anti-Spam Break Banner in-place update
+          const cooldownContainer = document.getElementById('mozbot-cooldown-container');
+          if (cooldownContainer) {
+            const hasBanner = Boolean(document.getElementById('mozbot-live-cooldown-banner'));
+            if (State.inCooldown && !hasBanner) {
+              cooldownContainer.innerHTML = renderCooldownBannerHtml();
+              document.getElementById('mozbot-skip-cooldown-btn')?.addEventListener('click', skipCooldown);
+            } else if (!State.inCooldown && hasBanner) {
+              cooldownContainer.innerHTML = '';
+            } else if (State.inCooldown) {
+              const cooldownTimer = document.getElementById('mozbot-live-cooldown-timer');
+              if (cooldownTimer) {
+                cooldownTimer.innerText = State.statusText.replace('☕ Anti-spam break ', '');
+              }
+            }
           }
 
+          // Cockpit / Save Now button in-place update
           const heroRightEl = document.getElementById('mozbot-hero-top-right');
           if (heroRightEl) {
-            if (State.running && (State.currentStage === 'generating' || State.currentOutputChars > 50)) {
+            const showSave = shouldShowSaveNowButton();
+            if (showSave) {
               if (!document.getElementById('mozbot-force-done-btn')) {
-                heroRightEl.innerHTML = `<button id="mozbot-force-done-btn" class="mozbot-force-btn" title="If ChatGPT response has finished, click to proceed immediately to save">⚡ Save Now</button>`;
-                document.getElementById('mozbot-force-done-btn')?.addEventListener('click', () => {
-                  log('⚡ Force save triggered by user.');
-                  State.forceComplete = true;
-                });
+                heroRightEl.innerHTML = `<button id="mozbot-force-done-btn" class="mozbot-force-btn" title="Save current ChatGPT response to chapter now">⚡ Save Now</button>`;
+                document.getElementById('mozbot-force-done-btn')?.addEventListener('click', saveCurrentResponseNow);
               }
-            } else if (heroRightEl.innerHTML.includes('mozbot-force-done-btn')) {
-              heroRightEl.innerHTML = '<span style="font-size:9.5px; color:#8b949e; font-weight:700; letter-spacing:0.5px;">COCKPIT</span>';
+            } else {
+              if (document.getElementById('mozbot-force-done-btn')) {
+                heroRightEl.innerHTML = '<span style="font-size:9.5px; color:#8b949e; font-weight:700; letter-spacing:0.5px;">COCKPIT</span>';
+              }
+            }
+          }
+
+          // Primary CTA Start/Pause Button in-place reactive update
+          const ctaContainer = document.getElementById('mozbot-cta-container');
+          if (ctaContainer) {
+            const isRunning = State.running;
+            const currentBtn = ctaContainer.querySelector('button');
+            const expectedId = isRunning ? 'mozbot-stop-btn' : 'mozbot-start-btn';
+            if (!currentBtn || currentBtn.id !== expectedId) {
+              ctaContainer.innerHTML = !isRunning
+                ? `<button id="mozbot-start-btn" class="mozbot-cta-start">▶ Start Auto-Retell</button>`
+                : `<button id="mozbot-stop-btn" class="mozbot-cta-stop">⏸ Pause Automation</button>`;
+              document.getElementById('mozbot-start-btn')?.addEventListener('click', startAutomation);
+              document.getElementById('mozbot-stop-btn')?.addEventListener('click', stopAutomation);
             }
           }
         } else if (State.activeTab === 'chapters') {
@@ -2442,7 +2630,7 @@
             <div class="mozbot-header-left">
               <span class="mozbot-drag-handle">⋮⋮</span>
               <span class="mozbot-header-title">⚡ Mozbot Studio</span>
-              <span class="mozbot-version-tag">v2.8.0</span>
+              <span class="mozbot-version-tag">v2.9.0</span>
             </div>
             <div class="mozbot-header-actions">
               <button id="mozbot-header-refresh" class="mozbot-icon-btn" title="Refresh server data">↻</button>
@@ -2536,18 +2724,8 @@
           _setValue('mozbot_single_ch', State.singleChapterIndex);
         });
 
-        document.getElementById('mozbot-skip-cooldown-btn')?.addEventListener('click', () => {
-          log('⚡ User skipped cooldown break. Resuming immediately...');
-          State.inCooldown = false;
-          State.cooldownEndsAt = 0;
-          _setValue('mozbot_cooldown_ends_at', 0);
-          updateUi();
-        });
-
-        document.getElementById('mozbot-force-done-btn')?.addEventListener('click', () => {
-          log('⚡ Force save triggered by user.');
-          State.forceComplete = true;
-        });
+        document.getElementById('mozbot-skip-cooldown-btn')?.addEventListener('click', skipCooldown);
+        document.getElementById('mozbot-force-done-btn')?.addEventListener('click', saveCurrentResponseNow);
 
         document.getElementById('mozbot-start-btn')?.addEventListener('click', startAutomation);
         document.getElementById('mozbot-stop-btn')?.addEventListener('click', stopAutomation);
@@ -2755,7 +2933,19 @@
       });
     }
 
-    console.log('%c⚡ Mozbot Audiobook Bridge v2.8.0 loaded successfully! Controller mounted at bottom-right.', 'background: #238636; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
+    // React instantly when user switches back to this browser tab
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        refreshServerStatus();
+        updateUi();
+      }
+    });
+    window.addEventListener('focus', () => {
+      refreshServerStatus();
+      updateUi();
+    });
+
+    console.log('%c⚡ Mozbot Audiobook Bridge v2.9.0 loaded successfully! Controller mounted at bottom-right.', 'background: #238636; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;');
   }
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
