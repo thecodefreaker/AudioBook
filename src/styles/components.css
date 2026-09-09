@@ -1,0 +1,2460 @@
+/* ============================================
+   COMPONENT STYLES
+   ============================================ */
+
+/* ============================================
+   UPLOAD
+   --------------------------------------------
+   The dashed drop-zone card is gone. It was permanently pinned in the sidebar
+   — the most prominent control on screen was one the user had already
+   finished with — and on the empty state it duplicated the hero's own Upload
+   button, offering two ways to do the same thing side by side.
+
+   Uploading now has one entry point ("New book"), and dropping a file works
+   anywhere on the page, which is precisely what makes a dedicated target
+   unnecessary. Only the progress narration below is still rendered.
+   ============================================ */
+
+.upload-progress {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-md);
+}
+
+.upload-file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: center;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-md);
+}
+
+.upload-status {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-sm);
+}
+
+/* --- Narrated upload stages --------------------------------------------- */
+.upload-steps {
+  list-style: none;
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.upload-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+}
+/* A dot per stage: hollow when pending, filled when active, ticked when done.
+   Shape carries the meaning as well as colour, so the state is still readable
+   without colour perception. */
+.upload-step::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+.upload-step.is-active {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.upload-step.is-active::before { background: currentColor; }
+.upload-step.is-done { color: var(--accent-success); }
+.upload-step.is-done::before {
+  content: '✓';
+  border: none;
+  width: auto;
+  height: auto;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* ============================================
+   CHAPTERS LIST
+   ============================================ */
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.config-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.config-select {
+  width: 100%;
+  padding: 10px 40px 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  appearance: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.config-select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+/* ============================================
+   GENERATE BUTTON
+   ============================================ */
+.btn-generate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-md) var(--space-xl);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-out), background-color 0.2s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-generate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.btn-generate:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  background: var(--accent-hover);
+}
+
+.btn-generate:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ============================================
+   PROGRESS SECTION
+   ============================================ */
+.overall-progress {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.progress-info span:first-child {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.progress-info span:last-child {
+  color: var(--text-secondary);
+}
+
+.chapter-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.chapter-progress-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.chapter-progress-item .chapter-progress-title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapter-progress-item .chapter-progress-status {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  min-width: 100px;
+  text-align: right;
+}
+
+.chapter-progress-item .status-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.status-icon.pending { color: var(--text-tertiary); }
+.status-icon.processing { color: var(--accent-primary); }
+.status-icon.done { color: var(--accent-success); }
+.status-icon.error { color: var(--accent-error); }
+
+.chapter-progress-item .mini-progress {
+  width: 80px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.chapter-progress-item .mini-progress-bar {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-smooth);
+}
+
+.chapter-progress-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.chapter-progress-play-btn:hover {
+  background: var(--accent-primary-hover);
+  transform: scale(1.1);
+}
+
+/* ============================================
+   LOG CONSOLE
+   ============================================ */
+.log-console {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.log-header:hover {
+  background: var(--bg-tertiary);
+}
+
+.log-chevron {
+  transition: transform var(--transition-base);
+}
+
+.log-console.open .log-chevron {
+  transform: rotate(180deg);
+}
+
+.log-body {
+  border-top: 1px solid var(--border-subtle);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Sticky toolbar: filtering a long run is useless if you must scroll up to
+   reach the controls. */
+.log-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.log-search {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.log-search:focus,
+.log-select:focus {
+  border-color: var(--accent-primary);
+}
+
+.log-select,
+.log-btn {
+  padding: 5px 10px;
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+}
+
+.log-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.log-count {
+  padding: 1px 7px;
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+}
+
+.log-empty {
+  padding: var(--space-lg);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.log-entries {
+  padding: var(--space-sm);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: var(--font-size-xs);
+  line-height: 1.7;
+}
+
+.log-entry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  padding: 3px var(--space-sm);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid transparent;
+  color: var(--text-secondary);
+}
+
+.log-entry.info { color: var(--text-secondary); }
+.log-entry.debug { color: var(--text-tertiary); }
+.log-entry.warn { color: var(--accent-warning); border-left-color: var(--accent-warning); }
+.log-entry.error { color: var(--accent-error); border-left-color: var(--accent-error); background: rgba(239, 68, 68, 0.06); }
+.log-entry.success { color: var(--accent-success); }
+
+.log-entry .log-time {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.log-entry .log-msg {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Chapter / stage chips let you scan a long run without reading every line. */
+.log-chip {
+  flex-shrink: 0;
+  padding: 0 6px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.log-detail {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+.log-detail summary {
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* Raw provider payloads are shown verbatim — never truncated or reworded. */
+.log-detail pre {
+  max-height: 220px;
+  margin-top: 4px;
+  padding: var(--space-sm);
+  overflow: auto;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ============================================
+   LOG CONSOLE — toolbar, chips, expandable detail
+   ============================================ */
+.log-toolbar {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-wrap: wrap;
+}
+
+.log-search {
+  flex: 1;
+  min-width: 120px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  outline: none;
+}
+
+.log-search:focus,
+.log-select:focus,
+.log-btn:focus-visible {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.log-select,
+.log-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.log-btn:hover { background: var(--bg-elevated); }
+
+.log-count {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 6px;
+}
+
+.log-empty {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.log-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.log-entry .log-msg { flex: 1; min-width: 0; word-break: break-word; }
+.log-entry.debug { color: var(--text-tertiary); }
+
+.log-chip {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* Raw provider payloads stay collapsed until asked for. */
+.log-detail { width: 100%; margin-top: 4px; }
+
+.log-detail summary {
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.log-detail pre {
+  margin: 4px 0 0;
+  padding: var(--space-sm);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-secondary);
+}
+
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  animation: fadeIn 0.3s var(--ease-out);
+  /* Overlays stack in DOM order. The reader opens first, the convert dialog
+     on top of it, the script editor on top of that - so a later overlay in
+     the markup must win without hardcoded z-index values drifting apart. */
+  z-index: 1000;
+}
+/* The reader/modal always spans the full viewport. Instead of cutting the
+   modal bottom by the player height (which hid text), the reader body gets
+   its own bottom padding to clear the docked player. This keeps every line
+   of text readable and clickable. */
+.has-player .modal-overlay {
+  bottom: 0;
+}
+#quick-convert-modal { z-index: 1002; }
+#script-editor-modal { z-index: 1003; }
+
+.modal-content {
+  width: 100%;
+  max-width: 900px;
+  /* dvh, not vh: on mobile the browser's collapsing address bar makes vh
+     taller than what is actually on screen, which pushed modal footers -
+     including "Start Conversion" - permanently below the fold. */
+  max-height: min(85dvh, 100dvh - var(--space-8));
+  
+  /* Premium Dark Glassmorphism */
+  background: rgba(12, 13, 18, 0.75);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+  
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.4s var(--ease-spring);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-sm { max-width: 520px; }
+.modal-md { max-width: 750px; }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex: 0 0 auto;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-header h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.modal-sub {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  /* 44px is the minimum comfortable touch target; the old 36px button was a
+     frequent mis-tap on phones. */
+  width: 44px;
+  height: 44px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.modal-close svg { width: 20px; height: 20px; }
+
+.modal-close:hover {
+  background: var(--accent-error);
+  color: white;
+}
+.modal-close:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-xl);
+  font-size: var(--font-size-base);
+  line-height: 1.8;
+  color: var(--text-secondary);
+  scroll-behavior: smooth;
+}
+
+/* --- Reader dialog ------------------------------------------------------ */
+/* The reader is the one dialog people spend minutes inside rather than
+   seconds, so it gets the tallest frame we can give it and a real reading
+   measure instead of the cramped 850px box it used to share with alerts. */
+.modal-reader {
+  max-width: 1240px;
+  height: min(88dvh, 100dvh - var(--space-8));
+  max-height: none;
+}
+
+.reader-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-sm);
+}
+.reader-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+}
+.reader-head-controls { flex-wrap: wrap; }
+.reader-head h3 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-body {
+  padding: var(--space-lg) clamp(var(--space-md), 4vw, var(--space-xl));
+  padding-bottom: var(--space-lg);
+}
+.has-player .reader-body {
+  padding-bottom: calc(var(--player-h) + var(--space-8));
+}
+/* Keeps lines at a readable measure while still filling the pane. */
+.reader-body > * { max-width: 68ch; margin-inline: auto; }
+
+/* --- Script toolbar ------------------------------------------------------
+   Sits above a script in the reader. "Generate audio from this script" has to
+   be next to the script it refers to: the same action offered from a sidebar
+   could not say *which* script it meant, which is how audio ended up being
+   made from a newer translation than the one on screen. */
+.script-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  margin-bottom: var(--space-lg, 20px);
+  padding: var(--space-sm, 10px) var(--space-md, 14px);
+  border: 1px solid var(--border-1, rgba(255, 255, 255, 0.09));
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+}
+.script-toolbar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: auto;
+  font-size: var(--text-sm);
+}
+.script-toolbar-meta span { color: var(--text-3); font-size: 0.78rem; }
+.script-toolbar-note {
+  flex-basis: 100%;
+  color: var(--text-3);
+  font-size: 0.75rem;
+}
+
+/* Script Version Select - High Contrast & Theme Aware */
+.script-version-select {
+  background: var(--surface-3, #1e1e2d);
+  color: var(--text-primary, #f3f4f6);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.25));
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s ease;
+}
+
+.script-version-select:hover {
+  background: var(--surface-4, #2a2b3d);
+  border-color: var(--accent-primary, #a855f7);
+}
+
+.script-version-select:focus-visible {
+  border-color: var(--accent-primary, #a855f7);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+}
+
+.script-version-select option {
+  background: #1e1e2d;
+  color: #ffffff;
+  padding: 6px;
+}
+
+/* Theme overrides for script toolbar & version dropdown */
+.modal-content.reader-theme-sepia .script-version-select {
+  background: #e8d7b5;
+  color: #2c1d11;
+  border-color: #cbb48b;
+}
+.modal-content.reader-theme-sepia .script-version-select option {
+  background: #e8d7b5;
+  color: #2c1d11;
+}
+
+.modal-content.reader-theme-light .script-version-select {
+  background: #e5e7eb;
+  color: #111827;
+  border-color: #9ca3af;
+}
+.modal-content.reader-theme-light .script-version-select option {
+  background: #ffffff;
+  color: #111827;
+}
+
+.reader-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.reader-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.reader-font-val {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* --- Two-pane reader ----------------------------------------------------- */
+/* Read on the left, listen on the right. Each pane owns its own scrolling,
+   which is what keeps the text column independent of the listening column. */
+.reader-panes {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+.reader-panes.has-chapter-sidebar {
+  grid-template-columns: 240px minmax(0, 1fr) 260px;
+}
+.reader-panes.has-chapter-sidebar:has(.listen-pane.collapsed) {
+  grid-template-columns: 240px minmax(0, 1fr) auto;
+}
+.reader-panes > .reader-body { min-width: 0; }
+
+.reader-chapter-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-1, #181824);
+  overflow: hidden;
+}
+/* Desktop: sidebar is a grid track — hide it when not toggled. */
+.reader-panes:not(.has-chapter-sidebar) .reader-chapter-sidebar {
+  display: none;
+}
+
+.reader-chapter-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+.reader-chapter-sidebar-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-gold, #e4b06a);
+}
+
+.reader-chapter-search-box {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+.reader-chapter-search-input {
+  width: 100%;
+  background: var(--surface-2, #212130);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-primary, #f3f4f6);
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  outline: none;
+}
+.reader-chapter-search-input:focus {
+  border-color: var(--accent-gold, #e4b06a);
+}
+
+.reader-chapter-sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reader-sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  color: var(--text-secondary, #9ca3af);
+  transition: all 0.15s;
+}
+.reader-sidebar-row:hover {
+  background: var(--surface-2, #212130);
+  color: var(--text-primary, #f3f4f6);
+}
+.reader-sidebar-row.active {
+  background: var(--surface-3, #2d2d42);
+  color: var(--accent-gold, #e4b06a);
+  font-weight: 600;
+}
+.reader-sidebar-num {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--text-tertiary, #6b7280);
+  flex-shrink: 0;
+}
+.reader-sidebar-row.active .reader-sidebar-num {
+  color: var(--accent-gold, #e4b06a);
+}
+.reader-sidebar-title {
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.reader-sidebar-meta {
+  font-size: 0.7rem;
+  color: var(--accent-gold, #e4b06a);
+  flex-shrink: 0;
+}
+
+.reader-sidebar-scrim {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  /* FIX (Issue 4): On mobile the sidebar is a fixed overlay, NOT a grid track.
+     The desktop rule `.reader-panes:not(.has-chapter-sidebar) .reader-chapter-sidebar
+     { display:none }` has higher specificity and hides the element before the
+     transform animation can fire. We must override it here to `display:flex`
+     and rely on `transform:translateX(-100%)` for the hidden state instead. */
+  .reader-chapter-sidebar,
+  .reader-panes:not(.has-chapter-sidebar) .reader-chapter-sidebar {
+    display: flex !important;  /* always in DOM so transform can animate */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    z-index: 1060;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.7);
+    transform: translateX(-100%);   /* hidden — slides in on open */
+    transition: transform 0.25s var(--ease-out);
+    /* Grid column sizing is irrelevant on mobile; take full column */
+    min-height: 100%;
+  }
+  /* Open state: JS adds .has-chapter-sidebar to .reader-panes */
+  .reader-panes.has-chapter-sidebar .reader-chapter-sidebar {
+    transform: translateX(0);
+  }
+  .reader-sidebar-scrim.show {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1055;
+  }
+}
+
+.listen-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-primary);
+}
+.listen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+  flex: 0 0 auto;
+}
+.listen-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.listen-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.listen-status {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+.listen-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.listen-meta[hidden] { display: none; }
+
+/* The conversion actions available from the reader, with the settings they
+   will use stated directly above them — those settings were previously only
+   visible inside a dialog, so pressing a button meant trusting a default you
+   could not see. */
+.listen-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+.listen-actions[hidden] { display: none; }
+
+/* --- Version management -------------------------------------------------
+   The pane manages this chapter's audio, so choosing a version and acting on
+   THAT version has to be possible without opening a dialog. */
+.listen-versions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space-sm);
+}
+.listen-versions[hidden] { display: none; }
+.listen-versions-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.listen-versions .select { width: 100%; }
+
+.listen-version-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+.listen-version-actions[hidden] { display: none; }
+.listen-version-actions .btn { flex: 1; }
+
+/* Says what the buttons below will actually do when there is no audio yet —
+   three similarly-named actions are otherwise indistinguishable. */
+.listen-empty-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: 1.45;
+  padding-bottom: var(--space-xs);
+}
+.listen-empty-note[hidden] { display: none; }
+
+.listen-settings {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  padding-bottom: var(--space-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listen-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+.listen-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Collapsed: the pane shrinks to its header so the text gets the full width
+   without the control disappearing entirely. */
+.listen-pane.collapsed .listen-body { display: none; }
+.reader-panes:has(.listen-pane.collapsed) { grid-template-columns: minmax(0, 1fr) auto; }
+
+.btn-mobile-listen-pane { display: none; }
+
+/* Below 1024px, the dual-pane view is too cramped. We switch to a mobile-first
+   Slide-Over Modal for the Studio Workspace. */
+@media (max-width: 1024px) {
+  .btn-mobile-listen-pane { display: inline-flex; }
+  
+  .reader-toolbar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  .reader-panes {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Listen Pane becomes a premium full-screen slide-over on small screens/tablets */
+  .listen-pane {
+    position: fixed;
+    inset: 0;
+    max-height: none;
+    z-index: 1100; /* Above modal overlay */
+    border-radius: 0;
+    border: none;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--bg-primary) !important;
+  }
+  .has-player .listen-pane {
+    bottom: 0; /* Cover the docked player completely so the workspace is 100% full screen */
+  }
+  .reader-theme-light .listen-pane { background: #f8f9fa !important; }
+  
+  .listen-pane.open { transform: translateX(0); }
+  
+  .listen-body {
+    padding: 20px;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 20px)) !important;
+  }
+  
+  #reader-chapter-jumper {
+    max-width: 110px !important;
+  }
+  
+  .mobile-hide-text {
+    display: none !important;
+  }
+  
+  .listen-pane-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1049;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .listen-pane-scrim.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Themes must reach the new pane too, or sepia/light leave a dark column. */
+.modal-content.reader-theme-sepia .listen-pane { background: #fbf0d9; border-color: #e2d2b4; color: #3b2a1a; }
+.modal-content.reader-theme-sepia .listen-row strong { color: #2c1d11; }
+.modal-content.reader-theme-light .listen-pane { background: #ffffff; border-color: #e0e0e0; color: #1a1a1a; }
+.modal-content.reader-theme-light .listen-row strong { color: #1a1a1a; }
+.modal-content.reader-theme-oled .listen-pane { background: #000000; border-color: #222222; color: #e5e5e5; }
+.modal-content.reader-theme-oled .listen-row strong { color: #e5e5e5; }
+
+.versions-sortbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: var(--space-sm) var(--space-xl) 0;
+}
+.versions-sort-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.qc-body { padding-top: var(--space-md); }
+.qc-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- Small screens ------------------------------------------------------ */
+/* Below this width a centred card wastes the edges, so dialogs become
+   full-height sheets and the header/footer stay pinned while content scrolls. */
+@media (max-width: 640px) {
+  .modal-overlay,
+  .has-player .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+    bottom: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 100dvh !important;
+    z-index: 1000 !important;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    border-width: 0;
+  }
+
+  .modal-reader {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-width: 0 !important;
+    z-index: 1001 !important;
+    margin: 0 !important;
+  }
+
+  /* === Issue 3: Reader header layout on mobile ===
+     The header has two rows:
+       Row 1: [≡ < >] nav + h3 title + jumper select + [X] close
+       Row 2: script tabs + Play + Studio + font toolbar
+     At 390px this is far too much. Strategy:
+       - Hide the chapter-jumper select (sidebar drawer is the alternative)
+       - Wrap row 1 so title gets its own line below the icon group
+       - Make the font toolbar collapsible behind a ⚙ icon (handled in HTML)
+       - Script tabs get their own scrollable strip
+  */
+  .reader-head {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+  }
+
+  /* Row 1: nav icons left, [X] right, h3 title fills second line */
+  .reader-head-row:first-child {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    align-items: center !important;
+  }
+
+  /* Chapter jumper dropdown: hidden on mobile — chapter sidebar replaces it */
+  #reader-chapter-jumper {
+    display: none !important;
+  }
+
+  /* Title takes full width below the icon row on mobile */
+  #modal-chapter-title {
+    order: 10 !important;           /* push below icon row */
+    flex: 1 1 100% !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Close button stays top-right */
+  .reader-head-row .modal-close {
+    flex-shrink: 0 !important;
+    order: 2 !important;
+    margin-left: auto !important;
+  }
+
+  /* Row 2 (controls): script tabs in their own scrollable strip,
+     no wrapping that causes clipping */
+  .reader-head-controls {
+    order: 11 !important;
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Script tabs strip — horizontally scrollable, each tab 44px tall */
+  .reader-tabs {
+    display: flex !important;
+    align-items: center !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+    padding: 2px !important;
+  }
+  .reader-tabs::-webkit-scrollbar { display: none; }
+
+  .reader-tab {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    min-height: 36px !important;   /* slightly smaller on mobile to save space */
+    padding: 0 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Font/follow toolbar: hidden by default on mobile, toggled by ⚙ button */
+  .reader-toolbar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    white-space: nowrap !important;
+    gap: 8px !important;
+    padding: 0 !important;
+  }
+  .reader-toolbar::-webkit-scrollbar { display: none; }
+  .reader-toolbar.hidden-mobile {
+    display: none !important;
+  }
+
+  /* Script toolbar & font controls scrollable container on mobile */
+  .script-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+    margin-bottom: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+  }
+
+  .script-toolbar > * {
+    flex-shrink: 0 !important;
+  }
+
+  .script-variant-tabs,
+  .reader-head .segmented {
+    display: flex !important;
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+  }
+
+  /* Quick convert is a decision form, so it stays a bottom sheet */
+  .qc-modal {
+    height: auto;
+    max-height: 85dvh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-top: 1px solid var(--border-medium);
+  }
+
+  .modal-header { padding: var(--space-md); }
+  .modal-body { padding: var(--space-md); }
+  .modal-footer { padding: var(--space-md); }
+
+  .qc-foot .qc-start { width: 100%; }
+  .reader-hint { display: none; }
+}
+
+.reader-para {
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: pre-wrap;
+  cursor: pointer;
+}
+
+.reader-para:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-left-color: rgba(168, 85, 247, 0.4);
+}
+
+.reader-para-active {
+  background: hsla(265, 90%, 62%, 0.12) !important;
+  border-left-color: var(--accent-primary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 0 20px hsla(265, 90%, 62%, 0.1);
+  font-weight: 500;
+}
+
+/* ============================================
+   SENTENCE-LEVEL AUDIO SYNC
+   Highlighting is per SENTENCE, not per paragraph, so the eye can follow the
+   voice exactly instead of a whole block lighting up at once.
+   ============================================ */
+.sentence {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 0;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.sentence:hover {
+  background: hsla(265, 90%, 62%, 0.14);
+}
+
+.sentence:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.sentence-active {
+  background: hsla(265, 90%, 62%, 0.28);
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: 0 0 0 3px hsla(265, 90%, 62%, 0.18);
+}
+
+/* Reduce motion for users who ask for it. */
+@media (prefers-reduced-motion: reduce) {
+  .sentence,
+  .reader-para {
+    transition: none;
+  }
+  .reader-body {
+    scroll-behavior: auto;
+  }
+}
+
+.reader-sync-status {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.reader-sync-status.ok {
+  color: var(--accent-success);
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.reader-sync-status.approx {
+  color: var(--accent-warning);
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.reader-sync-status.off {
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-subtle);
+}
+
+.reader-follow.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: transparent;
+}
+
+.reader-follow:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chapter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.chapter-badge.badge-hi {
+  background: rgba(234, 88, 12, 0.15);
+  color: #fb923c;
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+.chapter-badge.badge-en {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Reader Toolbar & Themes */
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.reader-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reader-btn-icon {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.reader-btn-icon:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
+}
+.reader-btn-icon:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.reader-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+  max-width: 100%;
+}
+.reader-select:focus-visible { box-shadow: var(--focus-ring); }
+
+/* === Issue 5 — Touch target minimum sizes ===
+   WCAG 2.5.5 and iOS/Android HIG both specify 44×44px minimum.
+   The previous coarse-pointer rule only reached 40×40px.
+   Applies to coarse pointers (touch screens), not fine (mouse/trackpad). */
+@media (pointer: coarse) {
+  .reader-btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+    height: auto;        /* auto allows content to grow beyond 44px if needed */
+    padding: 0 10px;
+  }
+  .reader-select {
+    padding: 10px 10px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .reader-tab {
+    min-height: 36px;   /* slightly relaxed inside the tabs strip */
+    min-width: 44px;
+    padding: 0 10px;
+  }
+  /* Filter tabs in chapter list */
+  .filter-tab {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}
+
+.modal-content.fullscreen-reader {
+  max-width: 100vw;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-width: 0;
+}
+/* Fullscreen exists to give the text room, so the measure widens with it
+   rather than leaving a narrow ribbon stranded in the middle of a large
+   monitor. */
+.fullscreen-reader .reader-body > * { max-width: 86ch; }
+
+/* Reader Themes */
+/* Themes must reach the scrolling body and the pinned header/footer, not just
+   the outer card - otherwise sepia/light left dark bars top and bottom. */
+.modal-content.reader-theme-sepia {
+  background: #fbf0d9 !important;
+  color: #3b2a1a !important;
+  border: 1px solid #e2d2b4 !important;
+}
+.modal-content.reader-theme-sepia .modal-header,
+.modal-content.reader-theme-sepia .modal-footer,
+.modal-content.reader-theme-sepia .modal-body {
+  background: #fbf0d9;
+  border-color: #e2d2b4;
+  color: #3b2a1a;
+}
+.modal-content.reader-theme-sepia h3,
+.modal-content.reader-theme-sepia .modal-meta,
+.modal-content.reader-theme-sepia .reader-hint {
+  color: #2c1d11 !important;
+}
+.modal-content.reader-theme-sepia .reader-para {
+  color: #2c1d11 !important;
+}
+.modal-content.reader-theme-sepia .reader-para-active {
+  background: rgba(180, 100, 30, 0.18) !important;
+  border-left-color: #b4641e !important;
+  color: #000000 !important;
+  box-shadow: 0 0 15px rgba(180, 100, 30, 0.12);
+}
+
+.modal-content.reader-theme-light {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e0e0e0 !important;
+}
+.modal-content.reader-theme-light .modal-header,
+.modal-content.reader-theme-light .modal-footer,
+.modal-content.reader-theme-light .modal-body {
+  background: #ffffff;
+  border-color: #e0e0e0;
+  color: #1a1a1a;
+}
+.modal-content.reader-theme-light h3,
+.modal-content.reader-theme-light .modal-meta,
+.modal-content.reader-theme-light .reader-hint {
+  color: #1a1a1a !important;
+}
+.modal-content.reader-theme-light .reader-para {
+  color: #222222 !important;
+}
+.modal-content.reader-theme-light .reader-para-active {
+  background: rgba(124, 58, 237, 0.12) !important;
+  border-left-color: #7c3aed !important;
+  color: #000000 !important;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.1);
+}
+
+.modal-content.reader-theme-oled {
+  background: #000000 !important;
+  color: #e5e5e5 !important;
+  border: 1px solid #222222 !important;
+}
+.modal-content.reader-theme-oled .modal-header,
+.modal-content.reader-theme-oled .modal-footer,
+.modal-content.reader-theme-oled .modal-body {
+  background: #000000;
+  border-color: #222222;
+  color: #e5e5e5;
+}
+.modal-content.reader-theme-oled h3,
+.modal-content.reader-theme-oled .modal-meta,
+.modal-content.reader-theme-oled .reader-hint {
+  color: #e5e5e5 !important;
+}
+.modal-content.reader-theme-oled .reader-para-active {
+  background: rgba(168, 85, 247, 0.22) !important;
+  border-left-color: #a855f7 !important;
+  color: #ffffff !important;
+}
+
+.modal-footer {
+  padding: var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.modal-meta {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+.toast-container {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 300px;
+  max-width: 450px;
+  animation: slideInRight 0.3s var(--transition-smooth);
+  backdrop-filter: blur(12px);
+}
+
+.toast.success { border-left: 3px solid var(--accent-success); }
+.toast.error { border-left: 3px solid var(--accent-error); }
+.toast.warning { border-left: 3px solid var(--accent-warning); }
+.toast.info { border-left: 3px solid var(--accent-primary); }
+
+.toast-message {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  font-size: 18px;
+}
+
+/* An offer, not a notification: it stays until acted on, so it needs a target
+   that looks pressable. */
+.toast-action {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.toast-action:hover { background: rgba(255, 255, 255, 0.2); }
+
+.toast.removing {
+  animation: slideOutRight 0.3s var(--transition-smooth) forwards;
+}
+
+/* ============================================
+   LIBRARY
+   ============================================ */
+
+/* The grid scrolls inside the content region, so the header and player stay
+   put while you browse. It previously sat in a page that could not scroll at
+   all, which is why the library appeared empty below the first row. */
+/* --- Toolbar ------------------------------------------------------------
+   The library's toolbar is a page header, not just a filter bar: a title on
+   the left, tools on the right. Previously it held a full-width search field
+   and nothing else, so the page opened with an input floating against the
+   left edge and no statement of where you were. */
+.library-toolbar {
+  justify-content: space-between;
+  row-gap: var(--space-3);
+}
+.library-toolbar-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.library-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+/* The count is the honest answer to "is this everything?" while a search is
+   narrowing the shelf. */
+.library-count {
+  font-size: var(--text-sm);
+  color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.library-toolbar-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.library-toolbar-tools .search-field { width: min(320px, 42vw); }
+
+@media (max-width: 640px) {
+  /* Tools take the full second row rather than crushing against the title. */
+  .library-toolbar-tools { width: 100%; }
+  .library-toolbar-tools .search-field { flex: 1; width: auto; }
+}
+
+.library-grid {
+  display: grid;
+  /* Cover-led tiles read as a bookshelf. Wider than a dense file grid, with
+     real gutters — a shelf you browse, not a directory listing.
+
+     `auto-fill` used to be paired with `1fr`, which meant the grid always
+     built a full row of tracks and stretched nothing into them: a library
+     with one book rendered one narrow card and four columns of dead space.
+     Capping the track keeps a card the same size whether there is one book or
+     fifty, and `justify-content: start` lines the shelf up flush with the
+     search field above it rather than floating it mid-column.
+
+     The region is no longer capped here: `.content-scroll` now applies the
+     `--content-max` cap as padding, so the grid and the toolbar share one
+     edge instead of each computing their own.
+
+     `auto-fill` + `1fr` is deliberate now that the shelf always ends in an
+     "Add a book" tile. Auto-fill holds the empty tracks open, so `1fr`
+     divides the row across a consistent number of columns and a card is the
+     same width at two books or twenty — the grid stays on one rhythm instead
+     of ballooning into half-width tiles when the shelf is short. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-6);
+  align-content: start;
+}
+/* Lets the fallback initial scale with the tile rather than the viewport. */
+.library-card { container-type: inline-size; }
+
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+.library-card:hover {
+  background: var(--surface-2);
+  border-color: var(--border-3);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+}
+.library-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* --- Add tile -----------------------------------------------------------
+   A shelf with one or two books used to trail off into empty grid tracks,
+   which read as "something failed to load" rather than "there is room for
+   more". The gap is now filled by the one action that resolves it, so the
+   emptiness becomes an invitation instead of an accident. */
+.library-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 100%;
+  padding: var(--space-6) var(--space-4);
+  font: inherit;
+  color: var(--text-3);
+  background: none;
+  border: 1.5px dashed var(--border-3);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+.library-add:hover {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.library-add:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.library-add-icon { font-size: 26px; line-height: 1; }
+.library-add-label { font-size: var(--text-base); font-weight: 600; }
+.library-add-sub { font-size: var(--text-sm); color: var(--text-4); }
+
+/* --- Cover ------------------------------------------------------------- */
+/* A fixed aspect ratio keeps the grid on a rhythm no matter what shape the
+   publisher's artwork happens to be. */
+.library-cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.library-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Books with no artwork still need to be distinguishable at a glance, so the
+   fallback is a large initial rather than a repeated generic icon. */
+.library-cover-fallback {
+  font-size: clamp(32px, 20cqw, 56px);
+  font-weight: 700;
+  color: var(--accent-text);
+  background: linear-gradient(145deg, var(--surface-3), var(--surface-2));
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.library-card-badge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  backdrop-filter: blur(6px);
+}
+
+.library-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.library-card-title {
+  font-size: var(--text-md);
+  font-weight: 650;
+  color: var(--text-1);
+  line-height: var(--leading-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-card-author {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.library-card-progress { margin-top: var(--space-1); }
+
+.library-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+/* Destructive action stays quiet until the card is hovered, so browsing a
+   library never puts Delete under the cursor by default. */
+.library-card-delete {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-4);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+.library-card:hover .library-card-delete,
+.library-card:focus-within .library-card-delete { opacity: 1; }
+.library-card-delete:hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+@media (hover: none) {
+  .library-card-delete { opacity: 1; }
+}
+
+
+/* =========================================
+   STICKY GLOBAL PLAYER
+   ========================================= */
+.sticky-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(12, 13, 18, 0.65);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.4s var(--ease-spring);
+  padding: var(--space-md) var(--space-xl);
+}
+
+.sticky-player.visible {
+  transform: translateY(0);
+}
+
+/* Inline generate button */
+.btn-generate-inline {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s var(--ease-out);
+}
+
+.btn-generate-inline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-generate-inline.generating {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  pointer-events: none;
+}
+
+/* ===========================================================
+   Convert dialog + custom script editor
+   Script source is an explicit, visible choice so the user is
+   never guessing which text will actually be spoken.
+   =========================================================== */
+.qc-sub { margin: 0 0 16px; font-size: 12px; color: var(--text-tertiary); line-height: 1.5; }
+.qc-field { width: 100%; margin-bottom: 16px; background: var(--bg-tertiary); }
+.qc-source-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.qc-source { position: relative; display: flex; gap: 10px; align-items: flex-start;
+  padding: 11px 13px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+  background: var(--bg-tertiary); cursor: pointer; transition: border-color .15s, background .15s; }
+.qc-source:hover { border-color: var(--border-medium); }
+.qc-source:has(input:checked) { border-color: var(--accent-primary); background: rgba(168,85,247,.08); }
+.qc-source.disabled { opacity: .55; cursor: not-allowed; }
+.qc-source input { margin-top: 3px; accent-color: var(--accent-primary); }
+.qc-source-body { display: flex; flex-direction: column; gap: 2px; }
+.qc-source-body strong { font-size: 13px; color: var(--text-primary); }
+.qc-source-body small { font-size: 11px; color: var(--text-tertiary); line-height: 1.45; }
+.qc-source-badge { position: absolute; top: 10px; right: 12px; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: .3px; }
+.qc-source-badge.ok { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.qc-source-badge.muted { background: var(--bg-secondary); color: var(--text-tertiary); border: 1px solid var(--border-subtle); }
+.qc-link { background: none; border: none; color: var(--accent-primary); font-size: 12px;
+  cursor: pointer; padding: 0 0 16px; text-align: left; }
+.qc-link:hover { text-decoration: underline; }
+.qc-summary { font-size: 12px; color: var(--text-secondary); line-height: 1.6;
+  background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 16px; }
+.qc-summary b { color: var(--text-primary); }
+
+/* Scope of the change: per-chapter exception vs. new default. */
+.qc-default-row { display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+  padding: 10px 12px; margin-bottom: 16px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle); background: var(--bg-secondary);
+  font-size: 12px; color: var(--text-secondary); }
+.qc-default-row:hover { border-color: var(--border-medium); }
+.qc-default-row input { margin-top: 2px; flex-shrink: 0; }
+.qc-default-row small { display: block; color: var(--text-tertiary); font-size: 11px; margin-top: 2px; }
+
+/*
+ * Split action: the frequent case (convert with current settings) is one
+ * click, and the rarer "but change something first" sits immediately beside
+ * it. Joining them into one control says they are the same action at two
+ * levels of detail, rather than two unrelated buttons.
+ */
+.btn-split { display: inline-flex; align-items: stretch; }
+.btn-split .btn-split-main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.btn-split .btn-split-side { border-top-left-radius: 0; border-bottom-left-radius: 0;
+  margin-left: -1px; padding-left: 7px; padding-right: 7px; }
+/* A hairline keeps the two halves legible as separate targets. */
+.btn-split .btn-split-side::before { content: ''; position: absolute; left: 0; top: 20%;
+  bottom: 20%; width: 1px; background: currentColor; opacity: .25; }
+.btn-split .btn-split-side { position: relative; }
+.qc-start { width: 100%; padding: 12px; background: var(--accent-primary); color: #fff;
+  border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: .2s; }
+.qc-start:hover { filter: brightness(1.1); }
+
+.se-modal { max-width: 720px; width: 100%; padding: 24px; display: flex; flex-direction: column; }
+.se-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.se-text { width: 100%; min-height: 320px; resize: vertical; padding: 14px;
+  background: var(--bg-tertiary); color: var(--text-primary);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 14px; line-height: 1.7; }
+.se-text:focus { outline: none; border-color: var(--accent-primary); }
+.se-status { font-size: 12px; color: var(--text-tertiary); padding: 9px 0; min-height: 20px; }
+.se-status.ok { color: #4ade80; }
+.se-status.warn { color: #fbbf24; }
+.se-status.err { color: var(--accent-error); }
+.se-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Keyboard shortcuts are stated rather than assumed, and this same element is
+   reused to explain the Ctrl+V fallback when the browser blocks clipboard
+   reads — so the message appears exactly where the failed action was. */
+.se-hint {
+  font-size: var(--text-xs);
+  color: var(--text-4);
+  margin-right: var(--space-2);
+}
+.se-btn {
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+.se-btn:hover { color: var(--text-primary); border-color: var(--border-medium); }
+.se-btn.ghost { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.se-btn.ghost:hover { color: var(--text-primary); border-color: var(--border-medium); }
+.se-btn.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-medium); }
+.se-btn.secondary:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
+.se-btn.primary { background: var(--accent-primary); color: #fff; border: none; }
+.se-btn.primary:hover { filter: brightness(1.1); }
+
+/* Script-source badges: state plainly whether audio came from the AI,
+   the user's own pasted script, or the untouched original text. */
+.chapter-badge.badge-src-custom { background: rgba(234,179,8,.15); color: #facc15; border: 1px solid rgba(234,179,8,.3); }
+.chapter-badge.badge-src-ai { background: rgba(168,85,247,.15); color: #c084fc; border: 1px solid rgba(168,85,247,.3); }
+.chapter-badge.badge-src-original { background: rgba(59,130,246,.15); color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
+
+/* Complete-audiobook panel: always states what is actually possible
+   (how many chapters are ready, whether a build exists / is stale). */
+.ab-card { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap; background: var(--bg-tertiary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 16px 18px; }
+.ab-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.ab-meta { font-size: 12px; color: var(--text-tertiary); line-height: 1.5; }
+.ab-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Reader Edit tab now routes to the single script editor modal
+   instead of hosting a second, subtly different editor. */
+.reader-edit-cta { display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-align: center; padding: 48px 24px; }
+.reader-edit-cta h4 { margin: 0; color: var(--text-primary); font-size: 16px; }
+.reader-edit-cta p { margin: 0; max-width: 440px; font-size: 13px;
+  color: var(--text-tertiary); line-height: 1.6; }
+/* Durable backend queue summary shown above per-chapter progress. */
+.queue-job-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.queue-heading { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-2); }
+.queue-job-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 10px; border: 1px solid var(--border-2); border-radius: 8px; background: var(--surface-2); }
+.queue-job-main { display: flex; min-width: 0; gap: 8px; align-items: baseline; }
+.queue-job-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-job-sub { grid-column: 1 / -1; }
+.queue-job-row .progress { grid-column: 1 / 2; }
+.queue-job-row > .btn { grid-column: 2 / 3; grid-row: 1 / span 2; }
+
+/* =========================================================================
+   TRUST & TRANSPARENCY
+   -------------------------------------------------------------------------
+   Everything below exists to answer, at a glance, the three questions a user
+   asks when a long job is running: is it alive, what is it doing, and when
+   will it change? The previous UI answered none of them, which is why a
+   perfectly healthy rate-limit pause felt like a crash.
+   ========================================================================= */
+
+/* --- Connection health --------------------------------------------------- */
+.conn-indicator {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 500;
+  background: var(--color-surface-2, rgba(255,255,255,.04));
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+.conn-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.conn-indicator[data-status="online"]     { color: var(--color-success, #34d399); }
+.conn-indicator[data-status="connecting"] { color: var(--color-warning, #fbbf24); }
+.conn-indicator[data-status="offline"]    { color: var(--color-error, #f87171); }
+.conn-indicator[data-status="online"] .conn-dot { animation: conn-pulse 2.4s ease-in-out infinite; }
+.conn-indicator[data-status="offline"] .conn-dot { animation: conn-pulse .8s ease-in-out infinite; }
+@keyframes conn-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+/* On narrow screens the dot alone carries the meaning. */
+@media (max-width: 900px) { .conn-indicator .conn-text { display: none; } }
+
+/* --- Stage stepper ------------------------------------------------------- */
+.stage-stepper {
+  display: flex; align-items: center; gap: 4px;
+  list-style: none; margin: 0 0 4px; padding: 0;
+}
+.stage-step { display: flex; align-items: center; gap: 4px; font-size: 10px; }
+.stage-step + .stage-step::before {
+  content: ''; width: 10px; height: 1px; background: var(--color-border, rgba(255,255,255,.12));
+}
+.stage-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-border, rgba(255,255,255,.18)); flex: none;
+}
+.stage-label { color: var(--color-text-dim); }
+.stage-step.done .stage-dot   { background: var(--color-success, #34d399); }
+.stage-step.done .stage-label { color: var(--color-text-dim); }
+.stage-step.active .stage-dot {
+  background: var(--color-primary, #6366f1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #6366f1) 25%, transparent);
+  animation: conn-pulse 1.6s ease-in-out infinite;
+}
+.stage-step.active .stage-label { color: var(--color-text); font-weight: 600; }
+.stage-step.todo .stage-label   { opacity: .45; }
+
+/* --- Chapter row progress ------------------------------------------------ */
+.ch-progress-msg  { font-size: 12px; display: block; }
+.ch-progress-meta { font-size: 10px; color: var(--color-text-dim); display: block; margin-top: 3px; }
+.ch-progress.is-waiting .ch-progress-msg { color: var(--color-warning, #fbbf24); }
+
+/*
+   A bar frozen at a fixed width reads as "hung". While we are deliberately
+   waiting on a rate limit, an indeterminate shimmer plus an explicit reason
+   reads as "waiting on purpose" — the single most important distinction in
+   this whole interface.
+*/
+.progress-indeterminate { position: relative; overflow: hidden; }
+.progress-indeterminate .progress-fill {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-warning, #fbbf24) 70%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.pulse-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--color-warning, #fbbf24);
+  animation: conn-pulse 1.2s ease-in-out infinite;
+}
+.status-icon.waiting { color: var(--color-warning, #fbbf24); }
+.mini-progress-bar.is-waiting { opacity: .7; }
+
+/* --- Quota panel --------------------------------------------------------- */
+#groq-quota-display {
+  font-size: 11px; margin-top: 8px; padding: 8px 10px;
+  border-radius: 8px; line-height: 1.5;
+  background: var(--color-surface-2, rgba(255,255,255,.03));
+  border: 1px solid var(--color-border, rgba(255,255,255,.08));
+}
+#groq-quota-display[data-state="throttled"] { border-color: color-mix(in srgb, var(--color-warning, #fbbf24) 45%, transparent); }
+#groq-quota-display[data-state="blocked"]   { border-color: color-mix(in srgb, var(--color-error, #f87171) 55%, transparent); }
+
+.quota-row { display: flex; align-items: center; gap: 6px; }
+.quota-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.quota-dim { color: var(--color-text-dim); font-size: 10px; }
+.quota-bar {
+  height: 4px; border-radius: 2px; margin: 5px 0 4px;
+  background: var(--color-border, rgba(255,255,255,.1)); overflow: hidden;
+}
+.quota-bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+.quota-ok      { background: var(--color-success, #34d399); color: var(--color-success, #34d399); }
+.quota-warning { background: var(--color-warning, #fbbf24); color: var(--color-warning, #fbbf24); }
+.quota-error   { background: var(--color-error, #f87171);   color: var(--color-error, #f87171); }
+.quota-notice { margin-top: 5px; font-size: 10px; font-weight: 500; }
+
+/* Per-model quota breakdown. Limits are per MODEL, so one aggregate number
+   cannot answer "which model is using how much". */
+.quota-models { margin-top: 6px; }
+.quota-models summary {
+  cursor: pointer; font-size: 10px; color: var(--color-text-dim);
+  user-select: none; padding: 2px 0;
+}
+.quota-models summary:hover { color: var(--color-text); }
+.quota-model-row {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 10px; padding: 2px 0;
+}
+.quota-model-name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%;
+}
+
+/* --- Reader Sync Hint Banner --- */
+.reader-sync-hint-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm, 10px);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--accent-primary, #a855f7) 12%, var(--surface-2, rgba(255, 255, 255, 0.04)));
+  border: 1px solid color-mix(in srgb, var(--accent-primary, #a855f7) 35%, transparent);
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.86rem;
+  color: var(--text-primary, #f3f4f6);
+  animation: fadeIn 0.2s ease;
+}
+.switch-to-audio-view-btn {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
+
+/* --- Inline Script Editor --- */
+.inline-se-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.inline-se-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.inline-se-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inline-se-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #f3f4f6);
+}
+.inline-se-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-tertiary, #9ca3af);
+}
+.inline-se-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inline-se-textarea {
+  width: 100%;
+  min-height: 240px;
+  padding: 14px;
+  background: var(--bg-primary, #111218);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.16));
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-primary, #f3f4f6);
+  font-family: var(--font-reading, system-ui, sans-serif);
+  font-size: 1rem;
+  line-height: 1.65;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+.inline-se-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary, #a855f7);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+.inline-se-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-3, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 8px);
+}
+.inline-se-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.inline-se-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-primary, #a855f7);
+  color: #ffffff;
+}
+.inline-se-counts {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #d1d5db);
+}
+.inline-se-voice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.inline-se-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary, #9ca3af);
+}
+.inline-se-select {
+  background: var(--bg-primary, #111218);
+  color: var(--text-primary, #f3f4f6);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.2));
+  border-radius: var(--radius-sm, 6px);
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+.inline-se-select:focus {
+  border-color: var(--accent-primary, #a855f7);
+}
+.inline-se-note {
+  font-size: 0.8rem;
+  color: var(--text-tertiary, #9ca3af);
+  line-height: 1.4;
+  min-height: 18px;
+}
+.inline-se-note.warn {
+  color: var(--color-warning, #fbbf24);
+}
+.inline-se-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+.se-voice-select, .se-lang-select, .se-voice, .se-lang {
+  background: var(--surface-3, #1e1e2d);
+  color: var(--text-primary, #f3f4f6);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.25));
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.inline-se-start-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+

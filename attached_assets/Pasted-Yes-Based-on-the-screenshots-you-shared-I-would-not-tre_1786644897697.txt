@@ -1,0 +1,1390 @@
+Yes. Based on the screenshots you shared, I would **not** treat this as a simple “UI redesign.” I would redesign the application around a clear **user journey and workspace model**.
+
+Your current UI is trying to make one screen handle library management, chapter management, reading, listening, and audiobook generation. That is why buttons, metadata, and actions are competing for space.
+
+The new model should be:
+
+> **Discover → Open Book → Resume → Read / Listen → Navigate Chapters → Convert when needed → Track progress → Return later**
+
+The application should feel like a **book reader + audiobook player + audiobook creation studio**, rather than an admin dashboard.
+
+---
+
+# 1. The overall application structure
+
+I would structure the application like this:
+
+```text
+AudioBook AI
+│
+├── Home
+│
+├── Library
+│   ├── All Books
+│   ├── Reading
+│   ├── Listening
+│   ├── Completed
+│   ├── Favorites
+│   └── Downloads
+│
+├── Book Workspace
+│   │
+│   ├── Overview
+│   ├── Chapters
+│   ├── Reading
+│   ├── Listening
+│   ├── Conversion
+│   ├── Notes
+│   └── Bookmarks
+│
+├── My Books
+│
+├── Audiobook Studio
+│   ├── Conversion Queue
+│   ├── Generated Audio
+│   └── Failed / Retry
+│
+└── Settings
+```
+
+But importantly, these should **not all feel like separate applications**.
+
+The user should feel like they are inside one book, and these are different modes of interacting with that book.
+
+---
+
+# 2. Global application layout
+
+## Desktop
+
+I recommend a 3-level structure.
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│ Logo │ Search                         │ Notifications │ Profile │ + │
+├───────────────┬──────────────────────────────────────────────────────┤
+│               │                                                      │
+│ Navigation    │                                                      │
+│               │                 APPLICATION CONTENT                  │
+│ Home          │                                                      │
+│ Library       │                                                      │
+│ My Books      │                                                      │
+│ Continue      │                                                      │
+│ Favorites     │                                                      │
+│ Downloads     │                                                      │
+│               │                                                      │
+│ ───────────   │                                                      │
+│ AI Tools      │                                                      │
+│ Convert       │                                                      │
+│               │                                                      │
+│ Settings      │                                                      │
+│               │                                                      │
+└───────────────┴──────────────────────────────────────────────────────┘
+```
+
+The left sidebar should **not consume 300px+** like some current screens.
+
+Approximately:
+
+```text
+Desktop sidebar: 220–250px
+```
+
+It should be collapsible.
+
+---
+
+# 3. Top navigation
+
+Top bar:
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎧 AudioBook AI   [ Search books, chapters... ]   🔔  ☾  Avatar + │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Left
+
+Logo:
+
+**AudioBook AI**
+
+Click → Home.
+
+### Search
+
+Global search.
+
+Placeholder:
+
+> Search books, chapters, authors...
+
+Search should find:
+
+* books
+* chapters
+* authors
+* notes
+* bookmarks
+
+Eventually:
+
+```text
+Search
+├── Books
+├── Chapters
+├── Authors
+├── Notes
+└── Bookmarks
+```
+
+### Right
+
+* notifications
+* theme
+* profile
+* New Book
+
+`+ New Book` should be the primary creation action.
+
+---
+
+# 4. Home screen
+
+The Home page should **not be a statistics dashboard first**.
+
+Its primary purpose is:
+
+> "What should I do next?"
+
+Layout:
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│ Good evening                                                │
+│ Continue your reading and listening                         │
+│                                                            │
+│ ┌────────────────────────────┐ ┌─────────────────────────┐ │
+│ │ Continue Reading           │ │ Continue Listening      │ │
+│ │                            │ │                         │ │
+│ │ Cover                      │ │ Cover                   │ │
+│ │ My Vampire System          │ │ Chapter 825             │ │
+│ │ Chapter 825                │ │ 32:14 / 45:21           │ │
+│ │ ███████████░░ 78%          │ │ █████████░░             │ │
+│ │                            │ │                         │ │
+│ │ [ Continue Reading ]       │ │ [ ▶ Resume ]            │ │
+│ └────────────────────────────┘ └─────────────────────────┘ │
+│                                                            │
+│ Your Library                                                │
+│ [All] [Reading] [Listening] [Completed] [Favorites]        │
+│                                                            │
+│ [Book] [Book] [Book] [Book] [Book]                         │
+│                                                            │
+│ Recently opened                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+The user shouldn't need to think.
+
+They see:
+
+> **Continue Reading**
+
+and click it.
+
+---
+
+# 5. Library
+
+The Library answers:
+
+> **"What books do I have?"**
+
+Not:
+
+> "How many chapters have I converted?"
+
+That's a major difference from your current UI.
+
+---
+
+## Library layout
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Library                                      + New Book       │
+│                                                              │
+│ [All Books] [Reading] [Listening] [Completed] [Favorites]   │
+│                                                              │
+│ Search books...                         Sort ▾   Filter ▾     │
+│                                                              │
+│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐     │
+│ │ Cover   │ │ Cover   │ │ Cover   │ │ Cover   │ │ Cover   │     │
+│ │         │ │         │ │         │ │         │ │         │     │
+│ │ Title   │ │ Title   │ │ Title   │ │ Title   │ │ Title   │     │
+│ │ 78%     │ │ 45%     │ │ 100%    │ │ 0%      │ │ 23%     │     │
+│ │ ████    │ │ ██      │ │ █████   │ │         │ │ ███     │     │
+│ │ Reading │ │ Reading │ │ Done    │ │ New     │ │ Audio   │     │
+│ └────────┘ └────────┘ └────────┘ └────────┘ └────────┘     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Clicking a book does **not** immediately open a giant chapter-management interface.
+
+It opens the **Book Workspace**.
+
+---
+
+# 6. Book Workspace — the most important screen
+
+This should become the center of the product.
+
+When the user clicks:
+
+> **My Vampire System**
+
+they enter:
+
+```text
+BOOK WORKSPACE
+```
+
+Not "chapter administration."
+
+---
+
+# 7. Book Workspace header
+
+Desktop:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ← Library                                                   │
+│                                                              │
+│ [Cover]  My Vampire System                                  │
+│          Jksmanga                                           │
+│          ⭐ 4.8    Fantasy • Action • System                 │
+│                                                              │
+│          78% complete                                       │
+│          ███████████████░░░                                 │
+│                                                              │
+│          [ ▶ Continue Reading ] [ 🎧 Listen ] [ ⋯ ]         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Primary button
+
+**Continue Reading**
+
+Because that's what most users want.
+
+### Secondary
+
+**Listen**
+
+### More
+
+Contains:
+
+* Download
+* Add to Favorites
+* Share
+* Book settings
+* Remove book
+
+Don't show ten buttons.
+
+---
+
+# 8. Book statistics
+
+Put statistics somewhere secondary.
+
+For example:
+
+```text
+2,545 Chapters
+3.9M Words
+434h Estimated
+78% Progress
+```
+
+Don't make these compete with:
+
+> Continue Reading
+
+---
+
+# 9. Book workspace tabs
+
+Under the header:
+
+```text
+[ Read ] [ Listen ] [ Chapters ] [ Convert ] [ Notes ]
+```
+
+This is extremely important.
+
+These are **modes**, not random buttons.
+
+---
+
+# 10. READ mode
+
+This should be the **default experience** when opening a chapter.
+
+The layout should be:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ← Chapters     Chapter 825 — The Leader Returns       ⋯      │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│                     CHAPTER 825                              │
+│                The Leader Returns                            │
+│                                                              │
+│      Lorem ipsum / actual book content...                    │
+│                                                              │
+│      Text should occupy a comfortable reading width.         │
+│                                                              │
+│      No giant empty space.                                   │
+│                                                              │
+│      Paragraph...                                            │
+│                                                              │
+│      Paragraph...                                            │
+│                                                              │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│ ← Previous                         Next →                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Critical difference from your current screenshot
+
+Your current reading screen effectively has:
+
+```text
+████████████████████████ EMPTY
+████████████████████████ EMPTY
+████████████████████████ TEXT
+```
+
+That is wrong.
+
+It should be:
+
+```text
+        ┌─────────────────────┐
+        │                     │
+        │     BOOK CONTENT    │
+        │                     │
+        │     BOOK CONTENT    │
+        │                     │
+        └─────────────────────┘
+```
+
+with a controlled readable width.
+
+---
+
+# 11. Reading toolbar
+
+At the top:
+
+```text
+Chapter 825
+
+Aa−  Aa+  Font  Theme  Width  🔖  ⋯
+```
+
+### Aa−
+
+Decrease font.
+
+### Aa+
+
+Increase font.
+
+### Font
+
+Choose:
+
+* Serif
+* Sans
+* Dyslexic-friendly, if supported
+
+### Theme
+
+```text
+Dark
+Light
+Sepia
+Black
+```
+
+### Width
+
+```text
+Narrow
+Comfortable
+Wide
+```
+
+### Bookmark
+
+One click.
+
+Immediately changes:
+
+```text
+♡ → 🔖
+```
+
+and displays:
+
+> Bookmark added
+
+Then disappears.
+
+---
+
+# 12. Reading progress
+
+At bottom:
+
+```text
+Chapter 825
+
+██████████████░░░░░░ 68%
+
+Chapter 824 ←                       → Chapter 826
+```
+
+The user can also use keyboard:
+
+```text
+← Previous chapter
+→ Next chapter
+Space → Play/Pause
+B → Bookmark
+```
+
+Desktop power users get shortcuts.
+
+---
+
+# 13. Chapter navigation
+
+Don't put 2,545 chapters permanently on screen.
+
+Instead:
+
+```text
+☰ Chapters
+```
+
+opens a chapter drawer.
+
+Desktop:
+
+```text
+┌─────────────────────────────────────┐
+│ Chapters                         ×   │
+│                                     │
+│ Search chapters...                  │
+│                                     │
+│ [All] [Unread] [Audio] [Completed] │
+│                                     │
+│ 823  The Return                     │
+│ 824  Before the Battle              │
+│ 825  The Leader Returns     ▶       │
+│ 826  New Beginning                  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+The current chapter is highlighted.
+
+---
+
+# 14. Mobile chapter navigation
+
+On mobile:
+
+```text
+Chapter 825
+The Leader Returns
+
+──────────────────
+
+[☰ Chapters]
+```
+
+Clicking it:
+
+```text
+┌──────────────────────────────┐
+│ Chapters                 ×   │
+│                              │
+│ Search...                    │
+│                              │
+│ 823 The Return               │
+│ 824 Before the Battle        │
+│ 825 The Leader Returns   ✓   │
+│ 826 New Beginning            │
+│                              │
+└──────────────────────────────┘
+```
+
+Bottom sheet.
+
+Much better than squeezing a sidebar into 390px.
+
+---
+
+# 15. LISTEN mode
+
+When the user clicks:
+
+**Listen**
+
+the UI transitions into an audiobook experience.
+
+Desktop:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ My Vampire System                              Chapters      │
+│                                                              │
+│                         [ COVER ]                             │
+│                                                              │
+│                    Chapter 825                               │
+│                  The Leader Returns                          │
+│                                                              │
+│                       10:07                                  │
+│              ─────────●────────────                          │
+│                05:21              10:07                      │
+│                                                              │
+│                ↶10   ▶ / ❚❚   10↷                           │
+│                                                              │
+│                 0.8x  1x  1.25x  1.5x  2x                  │
+│                                                              │
+│                 🔊 ─────────────                             │
+│                                                              │
+│       ← Previous     Chapters     Next →                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+This is a **listening environment**, not a reading environment.
+
+---
+
+# 16. Persistent mini-player
+
+When the user leaves the reading/listening screen:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Cover │ Chapter 825 │ ▶ ─────●───── │ 10:07 │ 1x │ 🔊 │ ⋯ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+It remains at the bottom.
+
+Clicking it expands the full player.
+
+---
+
+# 17. Audio player states
+
+This is something your current UI needs badly.
+
+### Before playing
+
+```text
+▶ Play
+```
+
+### Loading
+
+```text
+◌ Loading...
+```
+
+### Playing
+
+```text
+❚❚ Pause
+```
+
+### Buffering
+
+```text
+◌ Buffering...
+```
+
+### Error
+
+```text
+⚠ Unable to play
+[ Retry ]
+```
+
+### Finished
+
+```text
+✓ Completed
+[ Replay ]
+```
+
+The visual UI must **always match actual application state**.
+
+---
+
+# 18. Conversion mode
+
+This is where your current application is most obviously behaving like an admin tool.
+
+Instead:
+
+```text
+Convert to Audiobook
+```
+
+opens a dedicated workflow.
+
+---
+
+## Conversion screen
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Convert to Audiobook                                         │
+│ Chapter 825 — The Leader Returns                             │
+│                                                              │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ 1. CONTENT                                               │ │
+│ │                                                          │ │
+│ │ Chapter 825                                              │ │
+│ │ 1,542 words                                              │ │
+│ │                                                          │ │
+│ └──────────────────────────────────────────────────────────┘ │
+│                                                              │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ 2. VOICE                                                 │ │
+│ │                                                          │ │
+│ │ Madhur (Male, Indian)                       Change ▾      │ │
+│ │                                                          │ │
+│ └──────────────────────────────────────────────────────────┘ │
+│                                                              │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ 3. STYLE                                                 │ │
+│ │                                                          │ │
+│ │ YouTube Storyteller                           Change ▾   │ │
+│ │                                                          │ │
+│ └──────────────────────────────────────────────────────────┘ │
+│                                                              │
+│ Advanced settings ▾                                         │
+│                                                              │
+│ Estimated duration: 10:07                                   │
+│                                                              │
+│              [ Generate Audiobook ]                          │
+└──────────────────────────────────────────────────────────────┘
+```
+
+This is much cleaner.
+
+---
+
+# 19. Advanced conversion settings
+
+Don't expose:
+
+```text
+AI model
+API key
+token usage
+technical internals
+```
+
+on the main screen.
+
+Instead:
+
+```text
+Advanced settings ▾
+```
+
+Then:
+
+```text
+AI Model
+Quality
+Temperature
+Voice settings
+Chunk size
+API configuration
+```
+
+Most users don't need these.
+
+---
+
+# 20. Conversion progress
+
+After clicking:
+
+**Generate Audiobook**
+
+the button becomes:
+
+```text
+Generating...
+
+████████████░░░░░░ 67%
+
+Processing chapter...
+```
+
+Then:
+
+```text
+✓ Audiobook ready
+
+[ ▶ Play ] [ Download ]
+```
+
+If failure:
+
+```text
+⚠ Generation failed
+
+Something went wrong while generating audio.
+
+[ Retry ] [ View details ]
+```
+
+---
+
+# 21. Bulk conversion
+
+Your application has 2,545 chapters.
+
+So you absolutely need a bulk workflow.
+
+From Chapters:
+
+```text
+[ Select ]
+```
+
+Then:
+
+```text
+☑ Chapter 825
+☑ Chapter 826
+☑ Chapter 827
+```
+
+A bottom action bar appears:
+
+```text
+3 chapters selected
+
+[ Convert ] [ Download ] [ Mark complete ] [ More ]
+```
+
+This is much better than putting a Convert button on every chapter row.
+
+---
+
+# 22. Chapter list
+
+The chapter list itself should be simple.
+
+Instead of:
+
+```text
+checkbox
+number
+title
+duration
+language
+version
+voice
+date
+source
+play
+convert
+settings
+...
+```
+
+Use:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ □ 825   The Leader Returns              10:07     ▶          │
+│        Audio ready • Madhur                       ⋯          │
+├──────────────────────────────────────────────────────────────┤
+│ □ 826   New Beginning                   08:52     ▶          │
+│        Not converted                             Convert     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+The important information is immediately visible.
+
+Everything else belongs behind `⋯`.
+
+---
+
+# 23. Chapter status system
+
+Use clear states.
+
+### Not converted
+
+```text
+○ Not converted
+[ Convert ]
+```
+
+### Generating
+
+```text
+◌ Generating 64%
+```
+
+### Ready
+
+```text
+✓ Audio ready
+[ Play ]
+```
+
+### Failed
+
+```text
+⚠ Failed
+[ Retry ]
+```
+
+### Currently playing
+
+```text
+🔊 Playing
+```
+
+### Completed
+
+```text
+✓ Completed
+```
+
+---
+
+# 24. Notes
+
+Notes should be contextual.
+
+Inside Reading:
+
+```text
+Select text
+       ↓
+[ Highlight ] [ Note ] [ Copy ]
+```
+
+Then:
+
+```text
+Add note
+──────────────
+This scene is important because...
+
+[Cancel] [Save]
+```
+
+Notes appear later in:
+
+```text
+Book → Notes
+```
+
+---
+
+# 25. Bookmarks
+
+Bookmarking should be one click.
+
+In reading:
+
+```text
+🔖
+```
+
+Then:
+
+> Bookmark saved
+
+The bookmark appears in:
+
+```text
+Book → Bookmarks
+```
+
+with:
+
+```text
+Chapter 825
+"The Leader Returns"
+Page/position 68%
+```
+
+Click → returns exactly there.
+
+---
+
+# 26. Reading + audio synchronization
+
+This could become one of your strongest features.
+
+If the generated audiobook has timing information:
+
+```text
+The leader walked into the room.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+currently spoken
+```
+
+The text highlights as the narrator speaks.
+
+User clicks a paragraph:
+
+```text
+Paragraph
+   ↓
+Audio jumps to paragraph
+```
+
+This creates a genuinely useful **ebook + audiobook experience** rather than two unrelated modes.
+
+---
+
+# 27. Mobile application
+
+Mobile should NOT be the desktop UI compressed.
+
+It should be:
+
+```text
+┌───────────────────────┐
+│ ← My Vampire System ⋯ │
+├───────────────────────┤
+│                       │
+│                       │
+│       READING         │
+│                       │
+│   Chapter 825         │
+│                       │
+│   text text text      │
+│   text text text      │
+│   text text text      │
+│                       │
+│                       │
+├───────────────────────┤
+│ ← Previous   Next →   │
+├───────────────────────┤
+│ ▶ Chapter 825   10:07 │
+└───────────────────────┘
+```
+
+Bottom navigation:
+
+```text
+Home | Library | Books | Search | Profile
+```
+
+---
+
+# 28. Mobile audio player
+
+Tap mini-player:
+
+```text
+┌─────────────────────────┐
+│                         │
+│       COVER             │
+│                         │
+│   Chapter 825           │
+│   The Leader Returns    │
+│                         │
+│   ───────●────────      │
+│                         │
+│   ↶10   ❚❚   10↷       │
+│                         │
+│   0.8x  1x  1.25x  1.5x│
+│                         │
+│   Chapters   Sleep      │
+│                         │
+└─────────────────────────┘
+```
+
+Swipe down → closes.
+
+---
+
+# 29. Tablet
+
+Tablet gets an intermediate layout.
+
+For example:
+
+```text
+┌────────┬─────────────────────────────────┐
+│        │                                 │
+│ Nav    │       Reading                   │
+│        │                                 │
+│        │                                 │
+│        │                                 │
+└────────┴─────────────────────────────────┘
+```
+
+Chapter navigation becomes:
+
+```text
+drawer
+```
+
+rather than permanently occupying the screen.
+
+---
+
+# 30. Responsive rules
+
+Your agent should test at least:
+
+```text
+360
+390
+430
+768
+834
+1024
+1280
+1440
+1600
+1920
+```
+
+At every size:
+
+### Never allow
+
+* horizontal page scrolling
+* clipped text
+* clipped buttons
+* overlapping cards
+* buttons outside viewport
+* unreadable chapter titles
+* hidden navigation
+* content behind sticky player
+* nested accidental scrollbars
+
+---
+
+# 31. The interaction philosophy
+
+Every screen should answer five questions immediately:
+
+### 1. Where am I?
+
+Example:
+
+> My Vampire System → Chapter 825
+
+### 2. What am I doing?
+
+> Reading
+
+### 3. What can I do?
+
+Visible primary actions.
+
+### 4. What happened after I clicked something?
+
+Immediate feedback.
+
+### 5. What should I do next?
+
+The interface should make this obvious.
+
+---
+
+# 32. Button hierarchy
+
+This is crucial.
+
+Use approximately:
+
+### Primary
+
+Purple filled button.
+
+```text
+▶ Continue Reading
+```
+
+### Secondary
+
+Outlined/neutral.
+
+```text
+🎧 Listen
+```
+
+### Tertiary
+
+Text/icon.
+
+```text
+Bookmark
+Share
+```
+
+### Destructive
+
+Only for dangerous actions.
+
+```text
+Delete
+Remove book
+```
+
+Don't make every action purple.
+
+If everything screams for attention, nothing is primary.
+
+---
+
+# 33. What happens when the user opens your book
+
+The complete journey should be:
+
+```text
+HOME
+  ↓
+Continue Reading
+  ↓
+BOOK WORKSPACE
+  ↓
+Chapter 825
+  ↓
+READING
+  ↓
+User reads
+  ↓
+Clicks Play
+  ↓
+AUDIO STARTS
+  ↓
+Text synchronizes
+  ↓
+User continues reading/listening
+  ↓
+Chapter finishes
+  ↓
+Auto-next
+  ↓
+Chapter 826
+```
+
+Alternatively:
+
+```text
+BOOK
+ ↓
+Chapters
+ ↓
+Select chapter
+ ↓
+Listen
+ ↓
+Audio player
+```
+
+Or:
+
+```text
+BOOK
+ ↓
+Chapters
+ ↓
+Select chapters
+ ↓
+Convert
+ ↓
+Generation queue
+ ↓
+Audio ready
+ ↓
+Listen
+```
+
+That is the product's core loop.
+
+---
+
+# 34. Overall information architecture
+
+I would ultimately aim for this:
+
+```text
+                         AUDIOBOOK AI
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+           LIBRARY           HOME           SEARCH
+             │
+             ↓
+           BOOK
+             │
+     ┌───────┼────────┬───────────┐
+     │       │        │           │
+   READ    LISTEN   CHAPTERS    CONVERT
+     │       │        │           │
+     │       │        │           ├── Voice
+     │       │        │           ├── Style
+     │       │        │           ├── Advanced
+     │       │        │           └── Generate
+     │       │        │
+     │       │        └── Search
+     │       │        └── Filter
+     │       │        └── Bulk actions
+     │       │
+     │       └── Player
+     │           ├── Speed
+     │           ├── Seek
+     │           ├── Queue
+     │           └── Sleep timer
+     │
+     ├── Bookmarks
+     └── Notes
+```
+
+This is the architecture I think your current application is missing.
+
+---
+
+# 35. The biggest design change
+
+Your current interface is essentially:
+
+> **"Here are 2,545 chapters and all the things I can do to them."**
+
+The new interface should be:
+
+> **"Here is your book. Continue reading or listening. Everything else is available when you need it."**
+
+That one change should guide almost every design decision.
+
+---
+
+# 36. And yes — multiple designed screens are the right next step
+
+Rather than asking an agent to redesign the whole thing blindly, I would have it build these screens **in this order**:
+
+### Screen 1 — Home
+
+The user's starting point.
+
+### Screen 2 — Library
+
+Books and progress.
+
+### Screen 3 — Book Overview
+
+"My Vampire System."
+
+### Screen 4 — Chapter Navigator
+
+2,545 chapters, properly organized.
+
+### Screen 5 — Reading Mode
+
+**This needs the most attention.**
+
+### Screen 6 — Listening Mode
+
+Full audiobook experience.
+
+### Screen 7 — Mini Audio Player
+
+Persistent across the application.
+
+### Screen 8 — Conversion Studio
+
+Text → audiobook.
+
+### Screen 9 — Conversion Queue
+
+Multiple chapters generating.
+
+### Screen 10 — Notes & Bookmarks
+
+Reading intelligence.
+
+### Screen 11 — Search
+
+Books + chapters + content.
+
+### Screen 12 — Mobile Reading
+
+Dedicated mobile composition.
+
+### Screen 13 — Mobile Player
+
+Dedicated mobile composition.
+
+### Screen 14 — Tablet Book Workspace
+
+Intermediate responsive layout.
+
+### Screen 15 — Empty/Error/Loading States
+
+These are important and often forgotten.
+
+---
+
+## The implementation strategy I'd use
+
+**Do not give the coding agent one giant instruction saying "redesign everything."**
+
+That is exactly how you ended up with the current situation.
+
+Instead:
+
+**Phase 1:** Audit existing code
+↓
+**Phase 2:** Build design system
+↓
+**Phase 3:** Build Book Workspace shell
+↓
+**Phase 4:** Build Reading
+↓
+**Phase 5:** Build Listening
+↓
+**Phase 6:** Build Chapters
+↓
+**Phase 7:** Build Conversion
+↓
+**Phase 8:** Build Library/Home
+↓
+**Phase 9:** Mobile/tablet adaptation
+↓
+**Phase 10:** Interaction/state/UX audit
+
+And after each phase, the agent should test the actual application rather than assuming the implementation is correct.
+
+**Confidence: High** on this information architecture and UX direction based on the screenshots you supplied. The exact dimensions, component names, routes, and technical implementation should be adapted after inspecting your actual codebase.

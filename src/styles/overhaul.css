@@ -1,0 +1,620 @@
+/* Final cascade layer for the reading-room redesign. DOM hooks and behaviour
+   intentionally remain in their original modules. */
+:root {
+  --surface-0: hsl(236 18% 7%);
+  --surface-1: hsl(236 17% 10%);
+  --surface-2: hsl(235 15% 14%);
+  --surface-3: hsl(235 14% 18%);
+  --surface-4: hsl(235 13% 23%);
+  --text-1: hsl(38 24% 94%);
+  --text-2: hsl(35 13% 72%);
+  --text-3: hsl(35 8% 52%);
+  --text-4: hsl(35 8% 38%);
+  --accent: hsl(264 52% 67%);
+  --accent-hover: hsl(264 58% 74%);
+  --accent-active: hsl(264 48% 58%);
+  --accent-soft: hsl(264 52% 67% / .13);
+  --accent-border: hsl(264 52% 67% / .35);
+  --accent-text: hsl(264 70% 83%);
+  --font: 'DM Sans', sans-serif;
+  --font-reading: 'Newsreader', Georgia, serif;
+  --header-h: clamp(60px, 4.5vw, 72px);
+  --sidebar-w: clamp(220px, 22vw, 300px);
+  --player-h: clamp(68px, 6vw, 76px);
+}
+body { background: var(--surface-0); letter-spacing: .005em; }
+.shell-header { background: hsl(236 18% 8% / .94); border-bottom-color: hsl(35 20% 90% / .1); backdrop-filter: blur(16px); }
+.brand-mark { border-radius: 10px; background: var(--accent-active); }
+.brand-name { font-size: 16px; letter-spacing: -.035em; }
+.header-actions { gap: 10px; }
+.conn-indicator { order: 3; }
+.segmented { background: hsl(235 15% 14% / .8); border: 1px solid var(--border-1); }
+.segmented button { min-height: 36px; }
+.shell-sidebar { background: hsl(236 18% 8%); border-right-color: hsl(35 20% 90% / .09); padding: 20px 16px 28px; gap: 14px; }
+.content-toolbar { background: hsl(236 18% 7% / .93); border-bottom-color: hsl(35 20% 90% / .09); padding-block: 16px; }
+.content-scroll { padding-block: 28px 16px; }
+.shell-content,
+.content-scroll,
+.view,
+.home,
+.home > *,
+.home-section,
+#home-continue { min-width: 0; }
+.view.active,
+.workspace:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.content-scroll { overflow-x: hidden; }
+.shell-content { container: app-content / inline-size; }
+/* The list only needs extra clearance when the docked player is actually
+   present. Reserving a 96px player slot on an idle book creates a conspicuous
+   dead band beneath the pager, especially on shorter chapter lists. */
+.has-player .content-scroll { padding-bottom: calc(var(--player-h) + 24px); }
+.welcome { background: radial-gradient(45% 40% at 50% 18%, hsl(264 52% 67% / .09), transparent 72%), var(--surface-0); }
+.welcome-inner { max-width: 620px; gap: 18px; }
+.welcome-art { width: 64px; height: 64px; border-radius: 20px; background: var(--surface-2); border-color: var(--accent-border); }
+.welcome-title { max-width: 15ch; font-family: var(--font-reading); font-size: clamp(40px, 5vw, 68px); font-weight: 500; line-height: .98; letter-spacing: -.045em; }
+.welcome-sub { max-width: 44ch; color: var(--text-2); font-size: 17px; }
+.home { width: 100%; max-width: var(--content-max); margin-inline: auto; padding-top: 8px; gap: 40px; }
+.home-heading { font-family: var(--font-reading); font-size: 25px; font-weight: 500; letter-spacing: -.025em; }
+.home-intro { display: flex; flex-direction: column; gap: 6px; }
+.home-intro h1 { font-family: var(--font-reading); font-size: clamp(34px, 4vw, 52px); line-height: 1; font-weight: 500; letter-spacing: -.045em; }
+.home-intro p:last-child { color: var(--text-2); font-size: 16px; }
+.eyebrow { color: var(--accent-text); font-size: 11px; font-weight: 700; letter-spacing: .14em; }
+.continue-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(min(18rem, 38%), .65fr); gap: 16px; }
+.continue-card { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; min-height: 242px; padding: 20px; background: var(--surface-1); border-color: var(--border-2); box-shadow: var(--shadow-2); }
+.continue-card-main { display: grid; grid-template-columns: 104px minmax(0, 1fr); align-items: center; gap: 18px; flex: 1; }
+.continue-kicker { color: var(--text-3); font-size: 11px; font-weight: 700; letter-spacing: .13em; }
+.continue-title { font-family: var(--font-reading); font-size: 27px; font-weight: 500; }
+.continue-where { color: var(--text-2); }
+.continue-card:first-child .progress { margin-top: 4px; }
+.continue-actions { align-self: flex-start; }
+.continue-actions .btn { min-width: 158px; }
+.continue-listen-card { background: linear-gradient(145deg, hsl(264 40% 17%), var(--surface-1) 65%); }
+.continue-listen-copy { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.listen-orb { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--accent); }
+.listen-orb svg { width: 16px; }
+.continue-listen-stat { display: flex; align-items: baseline; gap: 8px; margin-top: auto; }
+.listen-stat-value { font-family: var(--font-reading); font-size: 42px; color: var(--text-1); }
+.listen-stat-label { color: var(--text-3); font-size: 13px; }
+.workspace-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(16px, 4vw, 40px);
+  padding: clamp(20px, 4vw, 30px) max(var(--space-6), calc((100% - var(--content-max)) / 2)) 22px;
+  border-bottom: 1px solid var(--border-1);
+  overflow: hidden;
+  z-index: 1;
+  background-color: var(--surface-0);
+}
+.workspace-bar::before {
+  content: '';
+  position: absolute;
+  inset: -60px;
+  z-index: -1;
+  background-color: transparent;
+  background-image: var(--header-cover, none);
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.3);
+  pointer-events: none;
+}
+.workspace-context { min-width: 0; flex: 1 1 18rem; position: relative; z-index: 2; }
+.workspace-context h1 { margin-top: 7px; font-family: var(--font-reading); font-size: clamp(28px, 3vw, 42px); line-height: 1; font-weight: 500; letter-spacing: -.04em; }
+.workspace-context p { margin-top: 8px; color: var(--text-2); }
+.workspace-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: 1 1 28rem; min-width: 0; position: relative; z-index: 2; }
+.book-card { padding: 20px; background: var(--surface-1); }
+.book-overview-title { font-family: var(--font-reading); font-size: 20px; font-weight: 500; }
+.ch-row { grid-template-columns: auto 3ch minmax(0, 1fr) minmax(0, auto) auto; padding: 14px 16px; border-radius: 10px; background: hsl(236 17% 10% / .72); }
+.ch-row:hover { background: var(--surface-2); }
+.ch-title { font-size: 16px; font-weight: 500; }
+.ch-actions .on-hover { opacity: .65; }
+.ch-row:hover .ch-actions .on-hover, .ch-row:focus-within .ch-actions .on-hover { opacity: 1; }
+.player { min-height: var(--player-h); padding: 10px 24px; background: hsl(236 17% 10% / .98); border-top-color: hsl(35 20% 90% / .12); box-shadow: 0 -6px 24px hsl(0 0% 0% / .22); }
+.player-art { overflow: hidden; }
+.player-title { font-family: var(--font-reading); font-size: 17px; font-weight: 500; }
+#btn-play-pause { width: 38px; height: 38px; }
+.modal-overlay { background: hsl(236 24% 4% / .88); backdrop-filter: blur(12px); }
+.modal-reader { width: min(1320px, calc(100% - 2 * clamp(12px, 3vw, 32px))); height: min(92dvh, 980px); border-color: var(--border-2); background: var(--surface-1); container: reader / inline-size; }
+.reader-head { padding: 18px 24px 14px; }
+.reader-head h3 { font-family: var(--font-reading); font-size: 23px; font-weight: 500; }
+.reader-body { padding: 46px clamp(20px, 8vw, 118px); font-family: var(--font-reading); font-size: 20px; line-height: 1.82; color: hsl(38 24% 88%); }
+.reader-body > * { max-width: 70ch; margin-top: 0; }
+.reader-panes { grid-template-columns: minmax(0, 1fr) 300px; }
+.listen-pane-scrim { display: none; }
+.listen-pane { background: hsl(236 18% 8%); }
+.listen-title { letter-spacing: .12em; color: var(--accent-text); }
+
+/* Conversion is a choice, not a settings dump. These cards make the outcome
+   scannable and keep the radio controls comfortably tappable on mobile. */
+.qc-action-group { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 18px; }
+.qc-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+.qc-action:hover { border-color: var(--border-3); background: var(--surface-3); }
+.qc-action:has(input:checked) { border-color: var(--accent-border); background: var(--accent-soft); }
+.qc-action input { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+.qc-action span { display: flex; flex-direction: column; gap: 3px; }
+.qc-action strong { color: var(--text-1); font-size: var(--text-base); }
+.qc-action small { color: var(--text-3); font-size: var(--text-sm); line-height: 1.4; }
+.qc-scope {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 5px 9px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.qc-summary-detail { color: var(--text-3); font-size: var(--text-xs); }
+.script-speak-btn, .reader-translate-btn { min-height: 40px; }
+.chapter-jumper { min-width: 0; }
+.chapter-jumper:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+@media (max-width: 1024px) {
+  /* The base reader stacks at tablet widths. Keep this override after the
+     desktop column definition so the text never collapses into a side rail. */
+  .reader-panes {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .listen-pane {
+    order: -1;
+    flex: 0 1 auto;
+    border-left: 0;
+    border-bottom: 1px solid var(--border-1);
+    max-height: clamp(120px, 24vh, 180px);
+    min-height: 0;
+  }
+  .listen-body {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .reader-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
+    overflow-y: auto;
+  }
+  .workspace-bar { padding-inline: max(18px, calc((100% - var(--content-max)) / 2)); }
+}
+
+/* Intermediate windows are common when the app is resized beside another
+   window. They are wider than a phone but too narrow for the desktop header
+   and the two-card home grid to remain comfortable. */
+@media (max-width: 840px) {
+  .shell-header {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+  .brand { gap: 8px; }
+  .brand-name { display: none; }
+  .header-actions {
+    min-width: 0;
+    gap: 4px;
+  }
+  .header-actions .segmented {
+    min-width: 0;
+  }
+  .header-actions .segmented button {
+    padding-inline: 10px;
+  }
+  .conn-indicator {
+    padding-inline: 4px;
+  }
+  .conn-indicator .conn-text,
+  .console-trigger .console-fab-label {
+    display: none;
+  }
+  #btn-new-book {
+    width: 38px;
+    padding-inline: 0;
+    font-size: 0;
+  }
+  #btn-new-book svg { display: block; }
+  #btn-chatgpt-bridge-toggle span:last-child { display: none; }
+  #btn-chatgpt-bridge-toggle { padding: 0 8px !important; }
+
+  .continue-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .continue-card,
+  .continue-card-main,
+  .continue-listen-copy {
+    min-width: 0;
+  }
+  .continue-card-main {
+    grid-template-columns: minmax(72px, 104px) minmax(0, 1fr);
+  }
+
+  .modal-reader {
+    width: calc(100% - 24px);
+    height: min(92dvh, calc(100dvh - 24px));
+  }
+}
+
+@media (max-width: 720px) {
+  .header-actions .segmented { display: none; }
+  .reader-head { gap: 8px; }
+  .reader-head-row:first-child { gap: 8px; }
+  .reader-head-row:first-child > div:nth-child(2) {
+    min-width: 0;
+  }
+  #reader-chapter-jumper {
+    max-width: min(150px, 30vw) !important;
+  }
+  .reader-head-controls {
+    align-items: stretch;
+  }
+  .reader-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .reader-toolbar {
+    width: 100%;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 1000px) {
+  :root { --header-h: 56px; --player-h: 56px; --sidebar-w: min(340px, 86vw); }
+  .shell-sidebar {
+    width: min(340px, 86vw) !important;
+  }
+  .shell-header {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .header-actions .segmented {
+    display: flex;
+    max-width: none;
+    overflow: visible;
+  }
+  .header-actions .segmented button {
+    padding-inline: 8px;
+    font-size: 11px;
+    min-height: 30px;
+  }
+  .console-trigger { padding-inline: 6px; height: 30px; }
+  #btn-new-book { padding-inline: 8px; height: 30px; }
+  #btn-new-book svg { display: none; }
+  .conn-indicator, .console-trigger .console-fab-label { display: none; }
+
+  /* Mobile scroll UX: Keep content-scroll as the robust scrolling container */
+  .content-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 10px 16px;
+  }
+  .has-player .content-scroll { padding-bottom: calc(var(--player-h) + 24px); }
+
+  /* Clean, functional Content Toolbar on Mobile (2 rows) */
+  .content-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 8px 10px;
+    gap: 8px;
+    background: var(--surface-0);
+    border-bottom: 1px solid var(--border-1);
+  }
+  .content-toolbar .search-field {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  .content-toolbar .search-field .input {
+    width: 100%;
+    height: 36px;
+    font-size: 13px;
+    border-radius: var(--radius-md);
+  }
+  .content-toolbar .filter-tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    gap: 2px;
+  }
+  .content-toolbar .filter-tab {
+    padding: 4px 10px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .content-toolbar select.select,
+  .content-toolbar .select-all-label {
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .welcome { padding: 24px 18px; }
+  .welcome-title { font-size: 43px; }
+  .welcome-actions { width: 100%; }
+  .welcome-actions .btn { flex: 1 1 100%; }
+  .home { gap: 30px; }
+  .home-intro h1 { font-size: 38px; }
+  .continue-grid { grid-template-columns: 1fr; }
+  .continue-card { grid-template-columns: 72px minmax(0, 1fr); padding: 16px; min-height: 0; }
+  .continue-title { font-size: 23px; }
+  .continue-actions { grid-column: 1 / -1; }
+  .continue-actions .btn { width: 100%; }
+  .ch-row { padding: 13px 12px; }
+  .player { padding: 8px 12px; min-height: 56px; }
+  .modal-reader {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+  }
+  .reader-head { padding: 12px; }
+  .reader-body { padding: 24px 16px 90px; font-size: 19px; line-height: 1.72; }
+  .listen-pane {
+    order: 0;
+    max-height: 85dvh;
+  }
+  .listen-pane-scrim { display: block; }
+  .workspace-bar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 12px 14px 10px;
+    gap: 10px;
+  }
+  .workspace-bar::before {
+    inset: -30px;
+  }
+  .workspace-context {
+    width: 100%;
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  .workspace-context .eyebrow { display: none; }
+  .workspace-context h1 {
+    font-size: 18px !important;
+    margin-top: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .workspace-context p { font-size: 12px; margin-top: 2px; }
+  .workspace-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+  .workspace-actions .btn {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  #workspace-create-audio { display: none; }
+  #workspace-chapters { display: none; }
+  .library-toolbar-head { width: 100%; }
+  .library-toolbar-tools { flex-wrap: wrap; }
+}
+
+/* Component containers, not viewport names, decide when a layout changes.
+   This keeps the same book workspace usable inside a narrow split window,
+   embedded preview, or future side panel without relying on device widths. */
+/* Removed buggy container queries for app-content. Relying on robust media queries instead. */
+
+@container reader (max-width: 58rem) {
+  .reader-panes {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .listen-pane {
+    order: -1;
+    flex: 0 1 auto;
+    max-height: clamp(120px, 24vh, 180px);
+    min-height: 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--border-1);
+  }
+  .listen-body {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .reader-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
+    overflow-y: auto;
+  }
+}
+
+@container reader (max-width: 42rem) {
+  .reader-head { gap: 8px; }
+  .reader-head-row:first-child { gap: 8px; }
+  .reader-head-row:first-child > div:nth-child(2) { min-width: 0; }
+  .reader-head-controls { align-items: stretch; }
+  .reader-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .reader-toolbar {
+    width: 100%;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+}
+
+/* Chapter navigator ------------------------------------------------------- */
+.chapter-browser-overlay {
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+}
+.chapter-browser-panel {
+  width: min(440px, 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-1);
+  border-left: 1px solid var(--border-2);
+  box-shadow: -20px 0 48px hsl(0 0% 0% / .3);
+  animation: slideInRight .22s var(--ease-out);
+}
+.chapter-browser-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid var(--border-1);
+}
+.chapter-browser-head h3 {
+  margin-top: 6px;
+  font-family: var(--font-reading);
+  font-size: 28px;
+  font-weight: 500;
+}
+.chapter-browser-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-1);
+}
+.chapter-browser-tools .search-field { max-width: none; }
+.chapter-browser-filters { display: flex; gap: 6px; }
+.chapter-browser-filter {
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-full);
+  padding: 7px 11px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+.chapter-browser-filter:hover,
+.chapter-browser-filter.active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.chapter-browser-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px 20px;
+}
+.chapter-browser-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-1);
+  text-align: left;
+  cursor: pointer;
+}
+.chapter-browser-row:hover,
+.chapter-browser-row.current {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+.chapter-browser-number {
+  color: var(--text-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+.chapter-browser-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.chapter-browser-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.chapter-browser-copy small { color: var(--text-3); font-size: var(--text-xs); }
+.chapter-browser-state { min-width: 18px; color: var(--accent-text); text-align: center; }
+.chapter-browser-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 48px 16px;
+  color: var(--text-2);
+  text-align: center;
+}
+.chapter-browser-empty span { color: var(--text-3); font-size: var(--text-sm); }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (max-width: 640px) {
+  .chapter-browser-overlay { align-items: flex-end; }
+  .chapter-browser-panel {
+    width: 100%;
+    height: min(86dvh, 720px);
+    border-left: 0;
+    border-top: 1px solid var(--border-2);
+    border-radius: 18px 18px 0 0;
+    animation: slideInBottom .22s var(--ease-out);
+  }
+  .chapter-browser-head { padding: 18px 16px 14px; }
+  .chapter-browser-tools { padding-inline: 16px; }
+  .chapter-browser-list { padding-inline: 10px; }
+}
+@keyframes slideInBottom {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .header-actions .segmented,
+  .shell-header nav.segmented {
+    display: none !important;
+  }
+}

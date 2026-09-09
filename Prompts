@@ -1,0 +1,452 @@
+Use these prompts with coding agents. Run the lead prompt
+  first, then the specialist prompts, then the final
+  reviewer.
+
+  ## 1. Lead architecture and implementation agent
+
+  You are the lead engineer for this repository.
+
+  Goal: make the audiobook application’s backend/frontend job
+  integration robust, observable, resumable, and performance-
+  safe.
+
+  First inspect the repository broadly. Read:
+
+  - server/core/queue.js
+  - server/core/pipeline.js
+  - server/models/database.js
+  - server/routes/books.js
+  - server/routes/system.js
+  - server/services/logBus.js
+  - server/services/translator.js
+  - server/services/ttsEngine.js
+  - src/main.js
+  - src/store.js
+  - src/services/api.js
+  - src/services/socket.js
+  - src/components/chapterList.js
+  - src/components/home.js
+  - src/index.html
+
+  Do not assume the existing implementation is correct.
+
+  Before editing, produce:
+
+  1. Actual backend execution flow.
+  2. Actual frontend execution flow.
+  3. Every job state and transition.
+  4. Every Socket.IO event.
+  5. Every REST endpoint involved.
+  6. Every possible duplicate-job path.
+  7. Every restart/reconnect failure path.
+  8. Every concurrency and rate-limit interaction.
+  9. Every place where frontend state can diverge from
+  database state.
+
+  Produce a markdown file that includes:
+  - Backend execution flow.
+  - Frontend execution flow.
+  - Every job state and transition.
+  - Every Socket.IO event.
+  - Every REST endpoint involved.
+  - Every possible duplicate-job path.
+  - Every restart/reconnect failure path.
+  - Every concurrency and rate-limit interaction.
+  - Every place where frontend state can diverge from
+  database state.
+
+  Required behavior:
+
+  - The database is the source of truth for job status.
+  - Queued jobs remain visible after navigation and browser
+  refresh.
+  - Running jobs remain visible after Socket.IO reconnect.
+  - The UI displays all queued and running jobs, including
+  jobs for other books.
+  - Queue position is accurate.
+  - Job status transitions are transactional and explicit:
+    queued → processing → completed
+    queued → cancelled
+    processing → failed
+    processing → interrupted
+  - A server restart must never silently lose queued work.
+  - A browser refresh must never create a duplicate job.
+  - Polling must never create work.
+  - Reconnecting Socket.IO clients must resynchronize state.
+  - A job creation request must be idempotent where
+  appropriate.
+  - Duplicate chapter processing must be prevented.
+  - Duplicate translation and TTS work must be prevented.
+  - Per-job cancellation and global cancellation must behave
+  consistently.
+  - A job must be resumable from completed chapters/chunks.
+  - Queue concurrency must be bounded.
+  - Translation concurrency must be controlled by a global
+  token-aware limiter.
+  - TTS concurrency must be bounded separately.
+  - FFmpeg compilation must not regenerate translation or
+  TTS.
+  - Progress must be persisted, not only held in browser
+  memory.
+
+  Add or improve tests for:
+
+  - multiple queued jobs
+  - queue position changes
+  - two jobs running concurrently
+  - cancellation of queued jobs
+  - cancellation of running jobs
+  - browser refresh during a queued job
+  - Socket.IO reconnect
+  - server restart recovery
+  - duplicate POST requests
+  - duplicate chapter requests
+  - retry after failure
+  - partial chapter completion
+  - Groq rate limiting
+  - TTS failure
+  - FFmpeg failure
+
+  Do not change unrelated application behavior.
+  Do not delete user data.
+  Do not rewrite the entire application.
+  Preserve existing user changes and unrelated documentation
+  deletions.
+  Use small, reviewable patches.
+  Run build, lint/syntax checks, and tests.
+  Report every modified file and every remaining risk.
+
+  ## 2. Backend queue and database specialist
+
+  Audit and improve only the backend queue, job lifecycle,
+  and database integration.
+
+  Inspect:
+
+  - server/core/queue.js
+  - server/core/pipeline.js
+  - server/models/database.js
+  - server/routes/books.js
+  - server/routes/system.js
+  - server/services/settings.js
+  - server/services/logBus.js
+
+  Find and fix:
+
+  - in-memory-only queue state
+  - incorrect queue positions
+  - jobs that disappear after restart
+  - jobs marked processing without an active worker
+  - duplicate job creation
+  - duplicate chapter processing
+  - race conditions between workers
+  - incomplete cancellation
+  - incorrect retry behavior
+  - stale progress percentages
+  - non-transactional state transitions
+  - missing ownership/lease handling
+  - missing idempotency keys
+  - invalid concurrency settings
+  - jobs that can remain permanently stuck
+
+  Required design:
+
+  - Persist job state in SQLite.
+  - Use explicit job status transitions.
+  - Use worker leases or claim tokens.
+  - Make claims atomic.
+  - Make retries bounded and observable.
+  - Store attempt count, last error, started time, finished
+  time, and heartbeat where appropriate.
+  - Ensure only one worker owns a job/chapter at a time.
+  - Add unique identities for translation and TTS work.
+  - Make resume behavior deterministic.
+  - Do not silently reprocess completed work.
+
+  Tests must prove that two workers cannot claim the same
+  chapter simultaneously.
+
+  ## 3. Frontend/backend integration specialist
+
+  Audit and improve only the frontend integration with the
+  backend job system.
+
+  Inspect:
+
+  - src/main.js
+  - src/store.js
+  - src/services/api.js
+  - src/services/socket.js
+  - src/index.html
+  - src/components/chapterList.js
+  - src/components/home.js
+  - src/components/logConsole.js
+  - server/index.js
+  - server/routes/system.js
+  - server/routes/books.js
+  - server/services/logBus.js
+
+  Trace every UI action that can start conversion.
+
+  Find and fix:
+
+  - duplicate POST requests
+  - buttons that remain enabled after submission
+  - jobs that disappear after refresh
+  - queued jobs missing from the Progress tab
+  - stale browser-only job state
+  - incorrect progress after reconnect
+  - progress events arriving before listeners exist
+  - Socket.IO room subscription failures
+  - duplicated event listeners
+  - incorrect queue positions
+  - UI showing “running” for queued jobs
+  - UI showing “completed” before backend completion
+  - cancellation buttons targeting the wrong job
+  - retry buttons creating unintended duplicate work
+  - progress from one book appearing on another book
+
+  Required design:
+
+  - Backend API/database is authoritative.
+  - Frontend maintains a normalized job store keyed by job
+  ID.
+  - Initial page load fetches `/api/system/queue`.
+  - Socket.IO events update the store.
+  - Reconnect triggers a full queue resynchronization.
+  - Polling is status-only and never creates jobs.
+  - Every submitted job has a visible job ID.
+  - Queue position and status are rendered from backend
+  state.
+  - Jobs for other books remain visible in a global queue
+  panel.
+  - Chapter progress is associated with both job ID and
+  chapter index.
+  - UI state is rebuilt after page refresh.
+
+  Add browser-independent tests for state transitions and
+  duplicate-event handling.
+
+  ## 4. Translation/Groq performance specialist
+
+  Audit and improve the translation pipeline without changing
+  translation quality unnecessarily.
+
+  Inspect:
+
+  - server/services/translator.js
+  - server/services/prompts.js
+  - server/utils/textChunker.js
+  - server/core/pipeline.js
+  - server/core/queue.js
+  - server/services/rateLimiter.js
+  - database translation/script tables
+  - relevant frontend conversion APIs
+
+  Measure from code:
+
+  - requests per chapter
+  - prompt overhead
+  - source tokens
+  - maximum output tokens
+  - concurrency
+  - retry count
+  - duplicate request paths
+  - repeated context
+  - repeated system prompts
+  - repeated metadata
+  - behavior after restart
+  - behavior after retry
+
+  Implement only evidence-based improvements:
+
+  - global organization-wide token limiter
+  - request limiter
+  - bounded concurrency
+  - explicit max output tokens
+  - Retry-After-aware 429 handling
+  - exponential backoff with jitter
+  - bounded retries
+  - idempotent translation chunks
+  - source-text hashing
+  - skip already completed chunks
+  - persistent chunk status
+  - resumable translation
+  - metrics for input tokens, output tokens, latency,
+  retries, and 429s
+
+  Do not solve rate limiting by blindly increasing
+  concurrency.
+  Do not use multiple API keys as a workaround.
+  Do not increase chunk size without checking model context
+  limits and output quality.
+
+  Add tests for duplicate requests, retries, 429 responses,
+  partial completion, and resume.
+
+  ## 5. TTS/audio/FFmpeg specialist
+
+  Audit and improve the TTS and audio pipeline.
+
+  Inspect:
+
+  - server/services/ttsEngine.js
+  - server/core/pipeline.js
+  - server/routes/audio.js
+  - database audio tables
+  - FFmpeg/FFprobe invocation code
+  - frontend playback and compilation code
+
+  Trace:
+
+  Hindi translated text
+  → TTS job
+  → Edge TTS/custom engine
+  → temporary files
+  → audio chunk
+  → FFmpeg concat
+  → chapter audio
+  → database row
+  → playback
+  → audiobook compilation
+
+  Find and fix:
+
+  - duplicate TTS generation
+  - TTS regeneration after retry
+  - concurrent writes to the same output path
+  - missing temporary-file cleanup
+  - unbounded Edge TTS processes
+  - missing TTS timeouts
+  - retry storms
+  - repeated FFmpeg conversion
+  - compilation that regenerates underlying chunks
+  - audio rows without idempotency
+  - playback pointing to stale or deleted files
+  - compilation races
+
+  Required behavior:
+
+  - Persist TTS chunk state.
+  - Use an idempotency key based on translated-text hash,
+  voice, provider, rate, and engine version.
+  - Store chunks independently before compilation.
+  - Bound TTS concurrency.
+  - Use unique temporary paths.
+  - Atomically finalize audio files.
+  - Run FFmpeg only when all required chunks are complete.
+  - Reuse existing chapter audio during audiobook
+  compilation.
+  - Preserve chapter ordering.
+  - Make failed TTS jobs resumable.
+  - Record duration, file size, provider, voice, and attempt
+  count.
+
+  Add tests for retry, duplicate requests, concurrent jobs,
+  cleanup, missing files, and compilation.
+
+  ## 6. Performance and observability specialist
+
+  Audit the application for measurable throughput
+  bottlenecks.
+
+  Inspect the entire repository and add instrumentation
+  without changing business behavior.
+
+  Measure and expose:
+
+  - queue wait time
+  - job execution time
+  - chapter execution time
+  - translation request latency
+  - Groq input/output tokens
+  - Groq 429 count
+  - retry count
+  - TTS latency
+  - FFprobe latency
+  - FFmpeg latency
+  - database query duration
+  - number of active workers
+  - number of pending jobs
+  - duplicate job attempts
+  - duplicate translation attempts
+  - duplicate TTS attempts
+  - filesystem write duration
+
+  For every metric, identify:
+
+  - where it is recorded
+  - where it is persisted
+  - where it is displayed
+  - whether it survives restart
+
+  Add structured logs with:
+
+  - job ID
+  - book ID
+  - chapter index
+  - chunk index
+  - stage
+  - attempt
+  - status
+  - duration
+  - error class
+
+  Do not add noisy per-character or per-token logging.
+  Do not log API keys or sensitive text.
+
+  ## 7. Final adversarial reviewer
+
+  Review the implementation as a hostile production-readiness
+  auditor.
+
+  Do not modify files initially.
+
+  Test and inspect:
+
+  - duplicate POST submission
+  - double-click conversion
+  - browser refresh during queued work
+  - browser refresh during active work
+  - Socket.IO disconnect/reconnect
+  - two browser tabs
+  - two books converting simultaneously
+  - server restart
+  - worker crash
+  - Groq 429
+  - Groq timeout
+  - Edge TTS timeout
+  - FFmpeg failure
+  - disk-full behavior
+  - database lock behavior
+  - retry behavior
+  - cancellation behavior
+  - compilation during chapter generation
+  - stale audio playback
+  - duplicate chapter audio
+
+  For each failure, classify:
+
+  CONFIRMED
+  LIKELY
+  POSSIBLE
+  UNKNOWN
+
+  Then provide:
+
+  1. Exact reproduction steps.
+  2. Relevant file and function.
+  3. Root cause.
+  4. Severity.
+  5. Minimal safe fix.
+  6. Test proving the fix.
+  7. Remaining risk.
+
+  Only after the audit is complete, implement fixes that are
+  clearly justified.
+  Run all available tests and report failures separately from
+  pre-existing failures.
+
+  Use the agents sequentially for code changes. Let only one
+  agent modify the queue/database at a time, otherwise
+  multiple agents may create conflicting job-state models.

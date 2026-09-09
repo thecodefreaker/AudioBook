@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# AI Agents & IDE scratchpads
+.agents/
+artifacts/
+scratch/
+.gemini/
+
+# Build outputs
+dist/
+build/
+
+# Runtime data & generated media
+data/audio/
+data/covers/
+data/uploads/
+data/temp/
+data/*.log
+data/*.sqlite*
+data/*.db
+data/temp_*
+
+# Logs
+*.log
+cloudflared.log
+dev.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Local secrets
+.env.local
+.env.*.local
+
+# Temporary / Scratch test scripts
+test-*.mjs
+scratch-*.mjs
+scratch.js
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~

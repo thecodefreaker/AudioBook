@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  audiobook-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audiobook-generator
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - GROQ_API_KEYS=${GROQ_API_KEYS:-}
+    volumes:
+      - ./data:/app/data

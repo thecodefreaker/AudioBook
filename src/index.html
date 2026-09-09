@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0d0e14" />
+  <meta name="description" content="Read ebooks, listen to chapters, and create natural Hindi or Hinglish narrated audiobooks with AI." />
+  <title>EPUB AI Audiobook Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles/tokens.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/primitives.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/shell.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/home.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/workspace.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/chapters.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/player.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/console.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/index.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/components.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/animations.css?v=20260904_4" />
+  <link rel="stylesheet" href="./styles/overhaul.css?v=20260904_4" />
+  <style>
+    /* 
+      EMERGENCY CACHE-BUSTING OVERRIDE FOR IOS SAFARI
+      Forces the new full-screen slide-over behavior even if components.css is cached.
+    */
+    html, body, #app {
+      overflow-x: hidden !important; /* PREVENTS iOS Safari from horizontally scrolling to hidden fixed elements! */
+      width: 100%;
+      position: relative;
+    }
+
+    /* Mobile Form & Button Reset: Force Dark Theme on Mobile Blink/WebKit */
+    button, input, select, textarea {
+      color-scheme: dark;
+    }
+
+    /* Volume Pills Bar: Single-row horizontal scroll track on all devices (never wrap into 8 lines!) */
+    .volume-pills-bar {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 6px !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      white-space: nowrap !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding: 6px 12px 8px !important;
+      height: 44px !important;
+      min-height: 44px !important;
+      max-height: 44px !important;
+      box-sizing: border-box !important;
+    }
+    .volume-pills-bar::-webkit-scrollbar { display: none !important; }
+
+    .volume-pills-label {
+      flex: 0 0 auto !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.06em !important;
+      color: #9d887b !important;
+      margin-right: 4px !important;
+    }
+
+    /* Volume Pill Button: Solid dark background with bright legible text on any phone */
+    .volume-pill {
+      flex: 0 0 auto !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      height: 28px !important;
+      padding: 0 12px !important;
+      border-radius: 9999px !important;
+      background-color: #242533 !important;
+      color: #e2e4ea !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      line-height: 1 !important;
+      cursor: pointer !important;
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      transition: all 0.15s ease !important;
+    }
+    .volume-pill:hover {
+      background-color: #343647 !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+    .volume-pill.active {
+      background-color: #a855f7 !important;
+      color: #ffffff !important;
+      border-color: #c084fc !important;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4) !important;
+    }
+
+    /* Quick jump dropdown selector next to pills on mobile */
+    .volume-select-dropdown {
+      flex: 0 0 auto !important;
+      height: 28px !important;
+      padding: 0 8px !important;
+      border-radius: 6px !important;
+      background-color: #1a1b24 !important;
+      color: #e2e4ea !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      margin-right: 4px !important;
+      cursor: pointer !important;
+      -webkit-appearance: none !important;
+      appearance: none !important;
+    }
+
+    /* Mobile Header Cleanup (<720px): strictly hide desktop segmented tabs */
+    @media (max-width: 720px) {
+      .shell-header .header-actions .segmented,
+      .shell-header nav.segmented,
+      .header-actions .segmented {
+        display: none !important;
+      }
+    }
+    @media (max-width: 1024px) {
+      .reader-panes { 
+        display: flex !important; 
+        flex-direction: column !important; 
+      }
+      
+      /* --- The Scrim (Dark Background Overlay) --- */
+      .listen-pane-scrim {
+        display: block !important;
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        z-index: 1049 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.2s ease-out !important;
+      }
+      .listen-pane-scrim.show {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+
+      /* --- The Centered Modal --- */
+      .listen-pane {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        width: 92vw !important;
+        max-width: 420px !important;
+        height: auto !important;
+        max-height: 85dvh !important;
+        z-index: 2000 !important;
+        
+        /* Premium Minimalist Glassmorphism styling */
+        border-radius: 20px !important; /* Slightly rounder for iOS feel */
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        
+        /* Glass effect instead of solid bg-primary */
+        background: rgba(12, 13, 18, 0.75) !important;
+        backdrop-filter: blur(24px) !important;
+        -webkit-backdrop-filter: blur(24px) !important;
+        
+        order: unset !important;
+        
+        /* Hidden State (Scale/Fade) instead of Slide */
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate(-50%, -46%) scale(0.96) !important;
+        transition: opacity 0.3s var(--ease-spring), transform 0.3s var(--ease-spring) !important;
+      }
+      
+      /* Open State */
+      .listen-pane.open { 
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: translate(-50%, -50%) scale(1) !important; 
+      }
+      
+      /* CACHE BUST: If old JS adds .collapsed, force it to just close the pane visually */
+      .listen-pane.collapsed { 
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate(-50%, -46%) scale(0.96) !important;
+      }
+      .listen-pane.collapsed .listen-body { display: flex !important; }
+      
+      .has-player .listen-pane { bottom: auto !important; }
+      .listen-body {
+        padding: 20px !important;
+        /* Padding bottom for safe area is still good */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 10px)) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="shell">
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="shell-header">
+      <div class="brand">
+        <button class="btn btn-ghost btn-icon sidebar-toggle" id="sidebar-toggle" aria-label="Toggle settings panel" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+          </svg>
+        </div>
+        <span class="brand-name">AudioBook AI</span>
+
+        <!-- The current book is context for the whole screen, so it lives here
+             rather than in a panel that can scroll out of view. -->
+        <div class="header-book hidden" id="header-book">
+          <span class="header-book-title" id="header-book-title"></span>
+          <span class="badge" id="header-book-chapters"></span>
+          <!-- Closing a book is separate from adding one. They used to be the
+               same button, so wanting to upload a second book silently evicted
+               the one you were reading. -->
+          <button class="btn btn-ghost btn-icon btn-sm" id="btn-close-book"
+                  title="Close this book" aria-label="Close this book">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!--
+          Connection health. A dropped socket used to be indistinguishable from
+          a stalled job, because progress simply stopped arriving in silence.
+        -->
+        <div class="conn-indicator" id="connection-status" data-status="connecting" role="status" aria-live="polite">
+          <span class="conn-dot"></span>
+          <span class="conn-text">Connecting…</span>
+        </div>
+
+        <nav class="segmented" role="tablist" aria-label="Views">
+          <button class="nav-btn" id="nav-home" data-view="home" role="tab" aria-selected="false">Home</button>
+          <button class="nav-btn" id="nav-create" data-view="create" role="tab" aria-selected="true">Workspace</button>
+          <button class="nav-btn" id="nav-library" data-view="library" role="tab" aria-selected="false">Library</button>
+        </nav>
+
+        <button class="btn btn-ghost btn-sm" id="btn-chatgpt-bridge-toggle" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.08); border-radius:8px; padding:0 12px; height:32px; font-size:12px; transition:all 0.2s ease; cursor:pointer;" title="Open ChatGPT Web Automation Bridge">
+          <span style="font-size:14px;">⚡</span>
+          <span>ChatGPT Bridge</span>
+        </button>
+
+        <button class="btn btn-ghost btn-sm" id="btn-export-db" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:#c084fc; border:1px solid rgba(192, 132, 252, 0.3); background: rgba(192, 132, 252, 0.08); border-radius:8px; padding:0 12px; height:32px; font-size:12px; transition:all 0.2s ease; cursor:pointer;" title="Export complete SQLite database to back up or use elsewhere">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Export DB</span>
+        </button>
+
+        <!--
+          Activity lives in the header, not in a floating bubble.
+
+          As a bubble it was pinned over whichever corner it occupied: on the
+          right it covered the player's speed and tone controls, on the left it
+          covered the sidebar's lowest card. Every "fix" was a different
+          collision, because a fixed overlay in a full-height layout has no
+          corner that is reliably empty.
+
+          In the header it cannot overlap anything by construction, and it is
+          still reachable from every view — which was the only real argument
+          for floating it. It keeps the error count and the red state, so a
+          failed conversion is still visible without opening the panel.
+        -->
+        <button class="btn btn-ghost btn-sm console-trigger" id="console-fab"
+                aria-expanded="false" aria-controls="console-panel" title="Activity log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span class="console-fab-label">Activity</span>
+          <span class="console-fab-count" id="log-count">0</span>
+        </button>
+
+        <button class="btn btn-secondary btn-sm" id="btn-new-book">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          New book
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+    <aside class="shell-sidebar" id="shell-sidebar">
+
+      <!--
+        Uploading has exactly one entry point now: the "New book" button in the
+        header, mirrored by the hero's button and the library's empty state,
+        all calling the same handler. There used to be a permanent drop-zone
+        card here *as well*, which meant the empty screen showed two different
+        ways to do the same thing side by side.
+
+        Nothing visible is lost: dropping a file anywhere on the page still
+        works, in every state, which is precisely what makes a dedicated drop
+        target unnecessary.
+      -->
+      <input type="file" id="file-input" accept=".epub" hidden />
+
+      <!--
+        Book overview — a compact card in the left column, not a full-width
+        banner. It was previously a wide block above the chapter list, which
+        spent the most valuable horizontal space in the app on information you
+        read once. As a card it keeps the whole content area for the chapter
+        list, which is the part that has to scale to a thousand rows.
+      -->
+      <section class="card book-card hidden" id="book-overview">
+        <div class="book-card-top">
+          <div class="book-overview-cover" id="book-overview-cover"></div>
+          <div class="book-card-id">
+            <h2 class="book-overview-title" id="book-overview-title"></h2>
+            <p class="book-overview-author" id="book-overview-author"></p>
+          </div>
+        </div>
+
+        <!-- A ring reads as "how far through am I" at a glance in a way a bar
+             in a stack of bars does not. -->
+        <div class="book-card-progress">
+          <div class="progress-ring" id="book-ring" role="img" aria-label="Audiobook creation progress">
+            <svg viewBox="0 0 44 44" width="56" height="56" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="19" />
+              <circle class="ring-fill" id="book-ring-fill" cx="22" cy="22" r="19" />
+            </svg>
+            <span class="progress-ring-label" id="stat-progress">—</span>
+          </div>
+          <dl class="book-stats">
+            <div class="book-stat"><dt>Chapters</dt><dd id="stat-chapters">—</dd></div>
+            <div class="book-stat"><dt>Words</dt><dd id="stat-words">—</dd></div>
+            <div class="book-stat"><dt>Est. length</dt><dd id="stat-length">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="progress visually-hidden"><div class="progress-fill" id="book-overview-bar" style="width:0%"></div></div>
+        <span class="book-resume" id="book-resume" hidden></span>
+
+        <!--
+          The finished audiobook lives here rather than in its own permanent
+          sidebar panel. Previously it sat detached, with no book name on it,
+          offering to "build" something that could not exist yet — a control
+          that is always visible but only sometimes meaningful teaches people
+          to ignore it. Here it belongs to a book, and states why it is not
+          available yet when it is not.
+        -->
+        <div class="book-card-audiobook" id="audiobook-panel">
+          <div class="book-card-audiobook-meta">
+            <span id="ab-title">Complete audiobook</span>
+            <span class="text-3" id="ab-meta">Checking…</span>
+          </div>
+          <div class="row wrap" style="gap:var(--space-2)">
+            <button class="btn btn-secondary btn-sm" id="btn-build-audiobook" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M12 2v6m0 0l3-3m-3 3L9 5"/><path d="M4 14h16v6H4z"/>
+              </svg>
+              <span id="btn-build-label">Build</span>
+            </button>
+            <a class="btn btn-primary btn-sm" id="btn-download-all" hidden download>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Progress appears IN PLACE, so starting a conversion never reflows
+           the page or pushes the chapter list out of view. -->
+      <section class="card hidden" id="section-progress" aria-live="polite">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Creating audiobook</div>
+            <div class="card-sub" id="progress-status-text">Preparing…</div>
+          </div>
+          <button class="btn btn-danger btn-sm" id="btn-cancel-all">Stop</button>
+        </div>
+        <div class="card-pad col" style="gap:var(--space-3)">
+          <div class="row-between text-sm">
+            <span class="text-2" id="overall-percent">0%</span>
+            <span class="text-3" id="overall-eta">Estimating…</span>
+          </div>
+          <div class="progress"><div class="progress-fill" id="overall-progress-bar" style="width:0%"></div></div>
+          <div class="queue-job-list" id="queue-job-list" aria-live="polite"></div>
+          <div class="chapter-progress-list" id="chapter-progress-list"></div>
+        </div>
+      </section>
+
+      <!--
+        Narration setup.
+
+        This was previously a permanently-open "Conversion defaults" form
+        asking for language, voice, style, model and an API key *before* the
+        user had heard anything — four technical decisions with no basis for
+        answering them. Now the common case is a single preset chip you can read at
+        a glance, and the form itself is collapsed behind it.
+      -->
+      <section class="card" id="section-convert">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Narration</div>
+            <div class="card-sub" id="preset-summary">Loading…</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-toggle-narration"
+                  aria-expanded="false" aria-controls="narration-fields">Change</button>
+        </div>
+
+        <div class="card-pad col" style="gap:var(--space-4)">
+          <!--
+            There is deliberately no Convert button here.
+            The sidebar button and the selection bar's button ran the *same*
+            function on the *same* selection, so the app appeared to offer two
+            different bulk conversions and neither said what it would produce.
+            Bulk conversion now lives in one place — the selection bar, which
+            appears next to the chapters it acts on. This card states the
+            settings those actions will use.
+          -->
+          <div class="narration-fields hidden" id="narration-fields">
+            <div class="field">
+              <label class="label" for="language-select">Output language</label>
+              <select id="language-select" class="select"></select>
+            </div>
+
+            <div class="field">
+              <label class="label" for="voice-select">Voice</label>
+              <select id="voice-select" class="select"></select>
+            </div>
+
+            <div class="field hidden" id="groq-config">
+              <label class="label" for="translation-style-select">Retelling style</label>
+              <select id="translation-style-select" class="select"></select>
+
+              <!--
+                The model picker is a debugging control, not a creative one —
+                99% of conversions should never touch it — so it is collapsed
+                rather than presented alongside choices that shape the result.
+              -->
+              <details class="advanced">
+                <summary>Advanced AI Settings</summary>
+
+                <div class="model-select-header">
+                  <label class="label" for="groq-model-select">AI model <span class="label-hint">optional</span></label>
+                  <button type="button" id="btn-refresh-models" class="btn-refresh-models" title="Query Groq API for live available models" aria-label="Refresh available models">
+                    <span class="refresh-icon" aria-hidden="true">↻</span> Check Live
+                  </button>
+                </div>
+
+                <select id="groq-model-select" class="select">
+                  <option value="">Auto (best available)</option>
+                </select>
+
+                <div id="groq-model-status" class="model-status-box"></div>
+
+                <div class="model-drawer-toggle-row">
+                  <button type="button" id="btn-toggle-model-list" class="btn-link-subtle">
+                    <span>Explore all models &amp; compatibility ▾</span>
+                  </button>
+                </div>
+
+                <div id="groq-all-models-drawer" class="model-drawer hidden">
+                  <div class="model-drawer-header">
+                    <span class="model-drawer-title">Model Compatibility &amp; Status</span>
+                    <button type="button" id="btn-close-model-drawer" class="btn-icon-close" title="Close">✕</button>
+                  </div>
+                  <div id="groq-all-models-list" class="model-drawer-list"></div>
+                </div>
+
+                <form id="groq-config-form">
+                  <label class="label" for="groq-api-key">Groq API key</label>
+                  <input type="password" id="groq-api-key" class="input" placeholder="gsk_…" autocomplete="off" />
+                  <div id="groq-quota-display" style="font-size: 11px; margin-top: 6px; color: var(--color-text-dim); display: none;">
+                    Tracking API tokens...
+                  </div>
+                </form>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ===================== CONTENT ===================== -->
+    <main class="shell-content" id="shell-content">
+
+      <!--
+        HOME. The returning user's landing state.
+
+        Previously there were only two states — hero (no book) and workspace
+        (book open) — so someone with twelve books and none open was shown a
+        first-timer's pitch for a product they already use. Home answers the
+        three things a returning user actually wants, in order of likelihood:
+        resume, switch to something recent, check what is still converting.
+      -->
+      <div class="view" id="view-home">
+        <div class="content-scroll">
+          <div class="home">
+              <section class="home-intro" aria-labelledby="home-title">
+                <p class="eyebrow">YOUR READING ROOM</p>
+                <h1 id="home-title">Pick up where you left off.</h1>
+                <p>Read, listen, or turn the next chapter into audio when you’re ready.</p>
+              </section>
+
+            <!-- Continue: the single most likely intent, so it is the largest
+                 target on the screen and needs no scrolling to reach. -->
+            <section class="home-section" id="home-continue-section" hidden>
+                <h2 class="home-heading">Your next chapter</h2>
+              <div id="home-continue"></div>
+            </section>
+
+            <!-- Still converting. Generation outlives the workspace it was
+                 started from, so it must be visible from outside it. -->
+            <section class="home-section" id="home-active-section" hidden>
+              <h2 class="home-heading">In progress</h2>
+              <div class="home-active" id="home-active"></div>
+            </section>
+
+            <section class="home-section" id="home-recent-section" hidden>
+              <div class="home-heading-row">
+                <h2 class="home-heading">Recent</h2>
+                <button class="btn btn-ghost btn-sm" id="home-see-all">All books →</button>
+              </div>
+              <div class="home-shelf" id="home-recent"></div>
+            </section>
+
+            <!-- Only reached when the library is genuinely empty. -->
+            <div class="home-empty" id="home-empty" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace view -->
+      <div class="view active" id="view-create">
+
+        <!--
+          WELCOME. Shown only while no book is open. A first-time user should
+          meet a single, obvious purpose statement and two actions — not empty
+          toolbars and a chapter list with nothing in it.
+        -->
+        <div class="welcome" id="welcome">
+          <div class="welcome-inner">
+            <div class="welcome-art" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="46" height="46">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+              </svg>
+            </div>
+            <h1 class="welcome-title">Turn any EPUB into a professional audiobook</h1>
+            <p class="welcome-sub">Upload a book, pick a narrator, and listen while you read along.</p>
+
+            <div class="welcome-actions" id="welcome-actions">
+              <button class="btn btn-primary" id="welcome-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload EPUB
+              </button>
+              <button class="btn btn-secondary" id="welcome-library">Open Library</button>
+            </div>
+
+            <p class="welcome-hint">…or drop an <strong>.epub</strong> anywhere on this page</p>
+
+            <!--
+              Upload progress renders here, in the centre of the screen the
+              user is already looking at, rather than in a sidebar panel off to
+              one side. It replaces the actions in place so the page does not
+              jump at the moment attention matters most.
+
+              Stages are driven by real parser events, never timers: a progress
+              bar that finishes before the work does destroys trust in every
+              other indicator in the app the first time it is caught lying.
+            -->
+            <div class="upload-progress hidden" id="upload-progress" aria-live="polite">
+              <div class="upload-file-info">
+                <span id="upload-file-name" class="truncate"></span>
+              </div>
+              <div class="progress"><div class="progress-fill" id="upload-progress-bar" style="width:0%"></div></div>
+              <p class="upload-status" id="upload-status">Uploading…</p>
+              <ol class="upload-steps" id="upload-steps">
+                <li class="upload-step" data-step="upload">Reading EPUB</li>
+                <li class="upload-step" data-step="extract">Extracting chapters</li>
+                <li class="upload-step" data-step="build">Building workspace</li>
+                <li class="upload-step" data-step="ready">Ready</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- WORKSPACE. Everything below only makes sense with a book open.
+             The book's identity and stats now live in the sidebar card, so the
+             full width of this column belongs to the chapter list. -->
+        <div class="workspace hidden" id="workspace">
+
+        <section class="workspace-bar" aria-labelledby="workspace-book-title">
+          <div class="workspace-context">
+            <span class="eyebrow">BOOK WORKSPACE</span>
+            <h1 id="workspace-book-title">Book</h1>
+            <p id="workspace-book-author">Open a chapter to begin reading.</p>
+          </div>
+          <div class="workspace-actions">
+            <button class="btn btn-primary" id="workspace-resume">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Read
+            </button>
+            <button class="btn btn-secondary" id="workspace-listen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+              Listen
+            </button>
+            <button class="btn btn-secondary" id="workspace-create-audio">
+              <span aria-hidden="true">✦</span>
+              Create audiobook
+            </button>
+            <button class="btn btn-secondary" id="workspace-chatgpt-bridge" style="display:inline-flex; align-items:center; gap:6px; color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.08); font-weight:600;" title="Open ChatGPT Web Automation Bridge">
+              <span aria-hidden="true">⚡</span>
+              ChatGPT Bridge
+            </button>
+            <button class="btn btn-ghost btn-sm" id="workspace-chapters">Browse chapters</button>
+          </div>
+        </section>
+
+        <div class="content-toolbar">
+          <div class="search-field grow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" id="chapter-search-input" class="input" placeholder="Search chapters by name or number…" aria-label="Search chapters" />
+          </div>
+
+          <div class="segmented filter-tabs" role="tablist" aria-label="Filter chapters">
+            <button class="filter-tab" data-filter="all" role="tab" aria-selected="true">All <span class="count" id="count-all"></span></button>
+            <button class="filter-tab" data-filter="ready" role="tab" aria-selected="false">Ready <span class="count" id="count-ready"></span></button>
+            <button class="filter-tab" data-filter="progress" role="tab" aria-selected="false">Creating audio <span class="count" id="count-progress"></span></button>
+            <!--
+              Hidden until something fails: a permanently visible "Failed (0)"
+              tab is a standing suggestion that the app breaks, and it costs a
+              slot in a control that is scanned constantly.
+            -->
+            <button class="filter-tab filter-tab-failed" data-filter="failed" role="tab" aria-selected="false" id="filter-tab-failed" hidden>Failed <span class="count" id="count-failed"></span></button>
+          </div>
+
+          <select id="chapter-sort-select" class="select" style="width:auto" aria-label="Sort chapters">
+            <option value="index_asc" selected>Order</option>
+            <option value="index_desc">Reverse order</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+            <option value="date_desc">Newest audio</option>
+            <option value="date_asc">Oldest audio</option>
+          </select>
+
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all-chapters" />
+            <span id="chapter-count">0 selected</span>
+          </label>
+        </div>
+
+        <!-- Volume / Range Navigator for 2000+ chapter novels -->
+        <div class="volume-pills-bar" id="volume-pills-bar" hidden aria-label="Chapter volume ranges"></div>
+
+        <div class="content-scroll">
+          <div class="chapters-list" id="chapters-list"></div>
+
+          <!--
+            Pagination, not infinite scroll. Books here run to a thousand
+            chapters: rendering them all produces tens of thousands of DOM
+            nodes and a list that stutters when you drag the scrollbar. Pages
+            keep the DOM small and, unlike a virtualiser, give a stable answer
+            to "where am I" that survives a reload.
+
+            Search and filters deliberately run across the *whole* book before
+            paging — a search that only looked at the current page would be a
+            trap, silently reporting no matches for a chapter that exists.
+          -->
+          <nav class="pager" id="chapter-pager" hidden aria-label="Chapter pages">
+            <button class="btn btn-secondary btn-sm" id="pager-prev">← Previous</button>
+            <span class="pager-status" id="pager-status" aria-live="polite"></span>
+            <label class="pager-jump">
+              <span class="visually-hidden">Go to page</span>
+              <input type="number" id="pager-input" class="input" min="1" step="1" inputmode="numeric" />
+            </label>
+            <button class="btn btn-secondary btn-sm" id="pager-next">Next →</button>
+          </nav>
+        </div>
+
+        <!--
+          Selection toolbar. Bulk actions only exist while something is
+          selected, so they are not permanent chrome competing for attention.
+          It is `hidden` by default and revealed by renderChapters().
+        -->
+        <div class="selection-bar" id="selection-bar" hidden role="region" aria-label="Bulk chapter actions">
+          <span class="selection-count" id="selection-count">0 chapters selected</span>
+          <div class="selection-actions">
+            <!--
+              Names what it produces. "Generate" and "Convert" were used
+              interchangeably across the app for three different outcomes
+              (text, audio, or both), so neither told you what you would get.
+            -->
+            <button class="btn btn-secondary btn-sm" id="sel-translate"
+                    title="Preview AI retellings for the selected chapters — text only, no audio">
+              Preview retelling
+            </button>
+            <button class="btn btn-primary btn-sm" id="sel-generate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Create audiobook
+            </button>
+            <button class="btn btn-secondary btn-sm" id="sel-voice">Change voice</button>
+            <button class="btn btn-secondary btn-sm" id="sel-export">Export</button>
+            <button class="btn btn-ghost btn-sm danger" id="sel-delete">Delete audio</button>
+            <button class="btn btn-ghost btn-sm" id="sel-clear">Clear</button>
+          </div>
+        </div>
+        </div><!-- /#workspace -->
+      </div>
+
+      <!-- Library view -->
+      <div class="view" id="view-library">
+        <div class="content-toolbar library-toolbar">
+          <!-- The library had no title of its own, so the search field was the
+               first thing on the page and sat alone against the left edge. A
+               heading gives the toolbar a left anchor and states what you are
+               looking at and how much of it there is. -->
+          <div class="library-toolbar-head">
+            <h2 class="library-title">Library</h2>
+            <span class="library-count" id="library-count"></span>
+          </div>
+          <div class="library-toolbar-tools">
+            <div class="search-field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="library-search" class="input" placeholder="Search your library…" aria-label="Search library" />
+            </div>
+            <select id="library-sort" class="select" style="width:auto" aria-label="Sort library">
+              <!-- Recently opened first: the book you want next is nearly always
+                   the one you had open last. -->
+              <option value="recent" selected>Recently opened</option>
+              <option value="added">Recently added</option>
+              <option value="title">Title A–Z</option>
+              <option value="progress">Most audio ready</option>
+            </select>
+          </div>
+        </div>
+        <div class="content-scroll">
+          <div class="library-grid" id="library-grid"></div>
+          <div class="empty hidden" id="library-empty">
+            <div class="empty-icon" aria-hidden="true">Shelf</div>
+            <div class="empty-title">No books yet</div>
+            <p class="empty-text">Add an EPUB and it will appear here, ready to narrate.</p>
+            <button class="btn btn-primary" id="library-upload">Upload EPUB</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Chapter Reader Modal -->
+    <div class="modal-overlay hidden" id="chapter-modal">
+      <div class="modal-content modal-reader" id="modal-content-container"
+           role="dialog" aria-modal="true" aria-labelledby="modal-chapter-title">
+        <div class="modal-header reader-head">
+          <div class="reader-head-row" style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);">
+            <div style="display: flex; align-items: center; gap: var(--space-1); flex-shrink: 0;">
+              <button class="reader-btn-icon" id="btn-reader-toggle-chapters" title="Toggle chapter sidebar" aria-label="Toggle chapter list">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                <span class="mobile-hide-text" style="margin-left:4px; font-size:11px; font-weight:600;">Chapters</span>
+              </button>
+              <button class="reader-btn-icon" id="btn-reader-prev" title="Previous Chapter" aria-label="Previous chapter">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="reader-btn-icon" id="btn-reader-next" title="Next Chapter" aria-label="Next chapter">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden;">
+              <h3 id="modal-chapter-title" style="margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Chapter Title</h3>
+              <select id="reader-chapter-jumper" class="chapter-jumper" title="Quick jump (Ctrl+K)" style="max-width: 150px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-medium); border-radius: 4px; padding: 2px 4px; font-size: 13px;"></select>
+            </div>
+            <button class="modal-close" id="modal-close" aria-label="Close reader" style="flex-shrink: 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="reader-head-row reader-head-controls" style="border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 8px; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 8px;">
+              <div class="reader-tabs" role="tablist" style="display: flex; align-items: center; flex-shrink: 0; background: var(--bg-secondary); padding: 4px; border-radius: 6px; border: 1px solid var(--border-medium);">
+                <button class="reader-tab" id="reader-tab-original" role="tab" aria-selected="true" style="border-radius: 4px; transition: all 0.2s; white-space: nowrap;">Original</button>
+                <button class="reader-tab" id="reader-tab-ai" role="tab" aria-selected="false" style="border-radius: 4px; transition: all 0.2s; white-space: nowrap;">AI script</button>
+                <button class="reader-tab" id="reader-tab-antigravity" role="tab" aria-selected="false" style="border-radius: 4px; transition: all 0.2s; white-space: nowrap;">Antigravity script</button>
+                <button class="reader-tab" id="reader-tab-edit" role="tab" aria-selected="false" style="border-radius: 4px; transition: all 0.2s; white-space: nowrap;">My script</button>
+              </div>
+              
+              <button class="btn btn-primary btn-sm" id="btn-reader-quick-play" aria-label="Play Audio" style="display: none; align-items: center; gap: 6px; white-space: nowrap; background: var(--primary-color);">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span class="mobile-hide-text">Play</span>
+              </button>
+              
+              <button class="btn btn-primary btn-sm btn-mobile-listen-pane" id="btn-mobile-listen" aria-label="Studio Workspace" style="display: flex; align-items: center; gap: 6px; white-space: nowrap; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-medium);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <line x1="4" y1="21" x2="4" y2="14"></line>
+                  <line x1="4" y1="10" x2="4" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12" y2="3"></line>
+                  <line x1="20" y1="21" x2="20" y2="16"></line>
+                  <line x1="20" y1="12" x2="20" y2="3"></line>
+                  <line x1="1" y1="14" x2="7" y2="14"></line>
+                  <line x1="9" y1="8" x2="15" y2="8"></line>
+                  <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                <span class="mobile-hide-text">Studio</span>
+              </button>
+            </div>
+
+            <!-- READER CONTROLS TOOLBAR
+                 On desktop: always visible inline.
+                 On mobile: hidden by default; ⚙ button toggles it. -->
+            <button class="reader-btn-icon" id="btn-reader-settings-toggle"
+                    title="Reading settings" aria-label="Toggle reading settings"
+                    aria-expanded="false"
+                    aria-controls="reader-toolbar"
+                    style="flex-shrink:0; margin-left: auto;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+            <div class="reader-toolbar hidden-mobile" id="reader-toolbar" style="display: flex; flex-wrap: nowrap; overflow-x: auto; background: transparent; border: none; padding: 0; width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: thin; gap: 12px; align-items: center;">
+              <!-- Audio sync: follow mode is OPT-IN, so reading ahead is never
+                   interrupted by the page scrolling itself. -->
+              <div class="reader-tool-group" title="Keep the spoken line centred while audio plays">
+                <button class="reader-btn-icon reader-follow" id="reader-follow-toggle" aria-pressed="false" style="border-radius: 4px;">
+                  Follow
+                </button>
+                <span class="reader-sync-status off" id="reader-sync-status">No audio playing</span>
+              </div>
+
+              <!-- Read aloud is temporary browser speech for the original ebook.
+                   It is intentionally separate from creating saved audiobook audio. -->
+              <div class="reader-tool-group reader-read-aloud-group" title="Read the original chapter aloud">
+                <button class="reader-btn-icon" id="btn-reader-read-aloud"
+                        aria-pressed="false" aria-label="Read original chapter aloud" style="border-radius: 4px;">
+                  Read aloud
+                </button>
+              </div>
+
+              <!-- Font Size Controls -->
+              <div class="reader-tool-group" title="Font Size">
+                <button class="reader-btn-icon" id="btn-font-dec" title="Decrease Font Size" aria-label="Decrease font size" style="border-radius: 4px;">A-</button>
+                <span id="reader-font-val" class="reader-font-val">16px</span>
+                <button class="reader-btn-icon" id="btn-font-inc" title="Increase Font Size" aria-label="Increase font size" style="border-radius: 4px;">A+</button>
+              </div>
+
+              <!-- Font Family Selector -->
+              <div class="reader-tool-group" title="Font Style">
+                <select id="reader-font-select" class="reader-select" style="border-radius: 4px;">
+                  <option value="sans">Sans-Serif</option>
+                  <option value="serif" selected>Serif (Book)</option>
+                  <option value="mono">Monospace</option>
+                </select>
+              </div>
+
+              <!-- Line Height Selector -->
+              <div class="reader-tool-group" title="Line Spacing">
+                <select id="reader-line-height-select" class="reader-select" style="border-radius: 4px;">
+                  <option value="1.4">Compact</option>
+                  <option value="1.7" selected>Normal</option>
+                  <option value="2.0">Spacious</option>
+                </select>
+              </div>
+
+              <!-- Theme Selector -->
+              <div class="reader-tool-group" title="Reading Theme">
+                <select id="reader-theme-select" class="reader-select" style="border-radius: 4px;">
+                  <option value="dark" selected>Dark</option>
+                  <option value="sepia">📜 Sepia</option>
+                  <option value="light">Light</option>
+                  <option value="oled">OLED</option>
+                </select>
+              </div>
+
+              <!-- Fullscreen Toggle Button -->
+              <button class="reader-btn-icon" id="btn-reader-fullscreen" title="Toggle Fullscreen Reader"
+                      aria-pressed="false" aria-label="Toggle fullscreen reader" style="border-radius: 4px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <!--
+          Two panes: read on the left, listen on the right. Checking that the
+          narration matches the text is the core review workflow, and doing it
+          by alt-tabbing between a reader and a player made it impractical.
+
+          `#modal-chapter-body` keeps its id, classes and position in the flow
+          so sentence sync, follow mode, themes and the font controls continue
+          to work untouched — this adds a pane beside it, it does not rebuild it.
+        -->
+        <div class="reader-panes" id="reader-panes">
+          <!-- Mobile scrim for listen pane -->
+          <div class="listen-pane-scrim" id="listen-pane-scrim"></div>
+          <!-- Scrim for reader chapter sidebar -->
+          <div class="reader-sidebar-scrim" id="reader-sidebar-scrim"></div>
+
+          <!-- Reader Chapter Sidebar / Drawer (Mockup Chapter Navigator) -->
+          <aside class="reader-chapter-sidebar" id="reader-chapter-sidebar" aria-label="Chapter navigation">
+            <div class="reader-chapter-sidebar-head">
+              <span class="reader-chapter-sidebar-title">Chapters</span>
+              <button type="button" class="reader-btn-icon" id="btn-reader-close-sidebar" aria-label="Close chapters">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+            </div>
+            <div class="reader-chapter-search-box">
+              <input type="search" class="reader-chapter-search-input" id="reader-sidebar-search" placeholder="Find chapter…" aria-label="Search chapters in reader" />
+            </div>
+            <div class="reader-chapter-sidebar-list" id="reader-sidebar-chapters-list">
+              <!-- Rendered chapter items -->
+            </div>
+          </aside>
+
+          <div class="modal-body reader-body" id="modal-chapter-body" tabindex="0">
+            <!-- Chapter text paragraphs will appear here -->
+          </div>
+
+          <aside class="listen-pane" id="listen-pane" aria-label="Listening">
+            <div class="listen-head" style="border-bottom: 1px solid var(--border-medium); padding-bottom: 8px; margin-bottom: 12px;">
+              <span class="listen-title" style="font-weight: 600; color: var(--text-primary); letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px;">Studio Workspace</span>
+              <button class="reader-btn-icon" id="btn-listen-collapse"
+                      aria-expanded="true" aria-controls="listen-body"
+                      title="Hide listening pane" aria-label="Hide listening pane">⟩</button>
+            </div>
+
+            <div class="listen-body" id="listen-body">
+              <!-- Studio Controls Section -->
+              <details class="studio-controls" style="margin-bottom: 20px; padding: 14px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <summary style="font-size: 11px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; user-select: none;">Script Extraction &amp; Prompt</summary>
+                
+                <div style="display:flex; align-items:center; justify-content: space-between; margin-top: 12px; margin-bottom: 12px; gap: 12px;">
+                  <button class="btn btn-secondary" id="btn-reader-copy" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.2s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy Text
+                  </button>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); cursor:pointer; user-select: none;">
+                    <input type="checkbox" id="reader-copy-prompt-toggle" style="cursor:pointer; width: 15px; height: 15px; accent-color: var(--primary-color);">
+                    Include Prompt
+                  </label>
+                </div>
+
+                <div id="reader-copy-prompt-manager" style="display: none; transition: all 0.3s ease; margin-top: 12px;">
+                  <textarea id="reader-copy-prompt-input" style="width:100%; min-height:90px; padding:10px; background:var(--bg-primary); border:1px solid var(--border-medium); color:var(--text-primary); border-radius:8px; font-size:12px; font-family:var(--font-mono); resize:vertical; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);" placeholder="Enter your custom AI prompt here..."></textarea>
+                  <p style="margin:6px 0 0; font-size:11px; color:var(--text-tertiary); line-height: 1.4;">This prompt will be automatically prepended to the text when copied.</p>
+                </div>
+
+                <button class="btn btn-secondary" id="btn-reader-chatgpt-bridge" style="width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); background: rgba(56, 189, 248, 0.06); transition: all 0.2s; cursor: pointer;" title="Automate retelling this chapter or the whole book with ChatGPT Web">
+                  <span style="font-size: 14px;">⚡</span>
+                  <span>ChatGPT Auto-Retell Bridge</span>
+                </button>
+              </details>
+
+              <!-- Sync Control -->
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                 <span style="font-size: 13px; color: var(--text-primary); font-weight: 600;">Audio Sync on Navigation</span>
+                 <label class="toggle-switch" style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); cursor:pointer; user-select: none;">
+                   <input type="checkbox" id="reader-sync-nav-toggle" checked style="cursor:pointer; width: 18px; height: 18px; accent-color: var(--primary-color);">
+                 </label>
+              </div>
+
+              <div class="listen-status" id="listen-status" style="margin-bottom: 16px; font-weight: 500;">No audio for this chapter yet.</div>
+
+              <!--
+                Version picker. A chapter accumulates versions precisely so they
+                can be compared, so the pane must let one be chosen rather than
+                always loading the newest and hiding the rest behind a dialog.
+              -->
+              <div class="listen-versions" id="listen-versions" hidden style="margin-bottom: 16px;">
+                <label class="listen-versions-label" for="listen-version-select" style="font-size: 12px; font-weight: 600; text-transform: uppercase;">Version</label>
+                <select class="select" id="listen-version-select" aria-label="Choose audio version" style="width: 100%; padding: 10px; border-radius: 8px;"></select>
+              </div>
+
+              <!-- Reflects the docked player rather than owning a second audio
+                   element: two players could otherwise play at once. -->
+              <div class="listen-meta" id="listen-meta" hidden style="padding: 16px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-subtle); margin-bottom: 24px;">
+                <div class="listen-row" style="margin-bottom: 8px;"><span>From</span><strong id="listen-source">—</strong></div>
+                <div class="listen-row" style="margin-bottom: 8px;"><span>Voice</span><strong id="listen-voice">—</strong></div>
+                <div class="listen-row" style="margin-bottom: 8px;"><span>Duration</span><strong id="listen-duration">—</strong></div>
+                <div class="listen-row"><span>Version</span><strong id="listen-version">—</strong></div>
+              </div>
+
+              <button class="btn btn-primary btn-block" id="listen-play" hidden style="padding: 14px; font-size: 16px; font-weight: 600; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="margin-right: 6px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Play this chapter
+              </button>
+
+              <!-- Acts on the SELECTED version, not the newest one. -->
+              <div class="listen-version-actions" id="listen-version-actions" hidden style="display: flex; gap: 12px; margin-bottom: 24px;">
+                <button class="btn btn-secondary" id="listen-download" style="flex: 1; padding: 10px; border-radius: 8px;">Download</button>
+                <button class="btn btn-secondary" id="listen-regenerate" style="flex: 1; padding: 10px; border-radius: 8px;"
+                        title="Make this version again from the same script">Regenerate</button>
+              </div>
+
+              <!--
+                "Convert" named three different outcomes depending on where you
+                pressed it. Each action now says what it produces, and the
+                settings they will use are stated above them rather than hidden
+                inside a dialog.
+              -->
+              <div class="listen-actions" id="listen-actions" hidden style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="listen-settings" id="listen-settings" title="Narration settings for this book" style="font-size: 13px; color: var(--text-secondary); text-align: center; padding-bottom: 8px;">—</div>
+                <div class="listen-empty-note" id="listen-empty-note" hidden style="font-size: 13px; color: var(--text-secondary); text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 8px;"></div>
+                <button class="btn btn-primary btn-block" id="listen-generate" style="padding: 16px; font-size: 16px; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);">
+                  Create audiobook
+                </button>
+                <button class="btn btn-secondary btn-block" id="listen-translate" style="padding: 14px; font-size: 15px; font-weight: 600; border-radius: 8px;">
+                  Preview AI retelling
+                </button>
+                <button class="btn btn-ghost btn-block" id="listen-settings-edit" style="padding: 12px; font-size: 14px;">
+                  Change settings…
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div class="modal-footer reader-foot">
+          <span class="modal-meta" id="modal-chapter-meta"></span>
+          <span class="reader-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Click any paragraph to seek audio playback
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapter navigator. It is a focused browse surface rather than a
+         scroll jump, so opening it never leaves the user in a blank-looking
+         region at the bottom of the workspace. -->
+    <div class="modal-overlay hidden chapter-browser-overlay" id="chapter-browser">
+      <aside class="chapter-browser-panel" role="dialog" aria-modal="true"
+             aria-labelledby="chapter-browser-title">
+        <div class="chapter-browser-head">
+          <div>
+            <p class="eyebrow">BOOK NAVIGATOR</p>
+            <h3 id="chapter-browser-title">Browse chapters</h3>
+          </div>
+          <button class="modal-close" id="chapter-browser-close" aria-label="Close chapter browser">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chapter-browser-tools">
+          <div class="search-field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" id="chapter-browser-search" class="input"
+                   placeholder="Search chapters…" aria-label="Search chapters in browser" />
+          </div>
+          <div class="chapter-browser-filters" role="tablist" aria-label="Chapter browser filter">
+            <button class="chapter-browser-filter active" data-browser-filter="all" role="tab" aria-selected="true">All</button>
+            <button class="chapter-browser-filter" data-browser-filter="unread" role="tab" aria-selected="false">Unread</button>
+            <button class="chapter-browser-filter" data-browser-filter="audio" role="tab" aria-selected="false">Audio ready</button>
+          </div>
+        </div>
+        <div class="chapter-browser-list" id="chapter-browser-list"></div>
+      </aside>
+    </div>
+
+    <!-- Chapter Audio Versions Modal -->
+    <div class="modal-overlay hidden" id="versions-modal">
+      <div class="modal-content modal-md" role="dialog" aria-modal="true" aria-labelledby="versions-modal-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="versions-modal-title">Audio Versions History</h3>
+            <p id="versions-modal-subtitle" class="modal-sub"></p>
+          </div>
+          <button class="modal-close" id="versions-modal-close" aria-label="Close versions history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="versions-sortbar">
+          <label class="versions-sort-label" for="versions-sort-select">Sort audio history</label>
+          <select id="versions-sort-select" class="reader-select">
+            <option value="desc" selected>Newest first (recently generated)</option>
+            <option value="asc">Oldest first</option>
+          </select>
+        </div>
+        <div class="modal-body" id="versions-modal-body">
+          <!-- Audio versions list will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Convert Modal -->
+    <div class="modal-overlay hidden" id="quick-convert-modal">
+      <div class="modal-content qc-modal" role="dialog" aria-modal="true" aria-labelledby="qc-modal-title">
+        <div class="modal-header">
+          <h3 id="qc-modal-title">Create Audiobook</h3>
+          <button class="modal-close" id="qc-modal-close" aria-label="Close audiobook creation dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body qc-body">
+        <p class="qc-sub" id="qc-modal-subtitle">AI retells this chapter in Hindi or Hinglish, then narrates it into a saved audio chapter.</p>
+
+        <!--
+          Scope is stated before anything else. A per-chapter dialog that looks
+          identical to a book-wide one is the reason "did that change one
+          chapter or all of them?" was unanswerable.
+        -->
+        <div class="qc-scope" id="qc-scope">Applies to: this chapter</div>
+
+        <!--
+          What the run will PRODUCE, chosen explicitly. "Convert" meant text,
+          audio, or both depending on which button you happened to press, so
+          the one thing the dialog never told you was what you would get.
+        -->
+        <label class="config-label">1. What should this produce?</label>
+        <div class="qc-action-group" id="qc-action-group">
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="both" checked />
+            <span><strong>Retell + narrate</strong><small>AI retells the chapter, then saves narrated audio.</small></span>
+          </label>
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="script" />
+            <span><strong>Preview retelling</strong><small>Generate the Hindi/Hinglish script first. No audio yet.</small></span>
+          </label>
+          <label class="qc-action">
+            <input type="radio" name="qc-action" value="audio" />
+            <span><strong>Narrate existing script</strong><small>Speak a script that is already ready.</small></span>
+          </label>
+        </div>
+
+        <label class="config-label">2. Retelling language</label>
+        <select id="qc-language" class="config-select qc-field"></select>
+
+        <!--
+          Script source is now an explicit choice. Previously "custom script"
+          was smuggled in as a translation *style*, so the app silently used AI
+          text even when the user had pasted their own script.
+        -->
+        <label class="config-label">3. What text should be spoken?</label>
+        <div class="qc-source-group" id="qc-source-group">
+          <label class="qc-source" data-value="ai-existing" id="qc-source-ai-existing" style="display: none;">
+            <span class="qc-source-badge ok">Free ($0)</span>
+            <input type="radio" name="qc-source" value="ai-existing" />
+            <span class="qc-source-body">
+              <strong>Existing AI Script</strong>
+              <small>Instant conversion using the already generated AI script.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="ai">
+            <input type="radio" name="qc-source" value="ai" checked />
+            <span class="qc-source-body">
+              <strong>AI retelling (Groq)</strong>
+              <small>Retells the chapter as natural Hindi or Hinglish storytelling using the style below.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="antigravity">
+            <span class="qc-source-badge ok">Local ($0)</span>
+            <input type="radio" name="qc-source" value="antigravity" />
+            <span class="qc-source-body">
+              <strong>Antigravity CLI</strong>
+              <small>Retells the chapter using the local Antigravity AI.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="custom" id="qc-source-custom">
+            <span class="qc-source-badge" id="qc-custom-badge"></span>
+            <input type="radio" name="qc-source" value="custom" />
+            <span class="qc-source-body">
+              <strong>My saved script</strong>
+              <small id="qc-custom-note">Spoken exactly as pasted — no AI, no edits.</small>
+            </span>
+          </label>
+          <label class="qc-source" data-value="original">
+            <input type="radio" name="qc-source" value="original" />
+            <span class="qc-source-body">
+              <strong>Original book text</strong>
+              <small>No translation at all. Reads the English source as-is.</small>
+            </span>
+          </label>
+        </div>
+        <button type="button" class="qc-link" id="qc-edit-script">Paste or edit my script for this chapter</button>
+
+        <div id="qc-antigravity-prompt-row" style="display: none; margin-top: 12px;">
+          <label class="config-label">Custom Antigravity Prompt (Optional)</label>
+          <textarea id="qc-antigravity-prompt" class="input" style="width: 100%; min-height: 80px; resize: vertical; margin-bottom: 12px;" placeholder="Leave empty to use the default prompt..."></textarea>
+        </div>
+
+        <div id="qc-style-row">
+          <label class="config-label">4. Storytelling Style</label>
+          <select id="qc-style" class="config-select qc-field"></select>
+        </div>
+
+        <label class="config-label" id="qc-voice-label">5. AI Voice</label>
+        <select id="qc-voice" class="config-select qc-field"></select>
+
+        <div class="qc-summary" id="qc-summary"></div>
+
+        <!--
+          Scope of the change, stated plainly. Without this the dialog has to
+          guess whether a chosen voice was meant for this chapter or for the
+          whole book, and either guess is wrong half the time. Unchecked by
+          default because a per-chapter dialog most often means "just this one".
+        -->
+        <label class="qc-default-row">
+          <input type="checkbox" id="qc-make-default">
+          <span>
+            Use these settings as this book's default
+            <small>Otherwise they apply to this chapter only.</small>
+          </span>
+        </label>
+
+        <!--
+          The "don't ask again" contract. Shown only until it is accepted, so
+          it disappears once it has been answered rather than nagging.
+        -->
+        <label class="qc-default-row" id="qc-quick-row">
+          <input type="checkbox" id="qc-quick-action">
+          <span>
+            Use these settings for this book and don't ask again
+            <small>Row buttons will start straight away with these settings. The gear stays one click away for exceptions.</small>
+          </span>
+        </label>
+        </div>
+
+        <div class="modal-footer qc-foot">
+          <button id="btn-qc-start" class="qc-start">Create audiobook</button>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Batch conflict resolution.
+
+      A selection whose chapters do not agree on settings has no single right
+      answer, and both plausible ones are destructive in different directions:
+      converting uniformly discards the exceptions, converting per-chapter
+      creates several jobs. Guessing either way silently was the old bug, so
+      the choice is put to the user once and can then be remembered.
+    -->
+    <div class="modal-overlay hidden" id="batch-conflict-modal">
+      <div class="modal-content qc-modal" role="dialog" aria-modal="true" aria-labelledby="bc-title">
+        <div class="modal-header">
+          <h3 id="bc-title">These chapters use different settings</h3>
+          <button class="modal-close" id="bc-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body qc-body">
+          <p class="qc-sub" id="bc-subtitle">Choose how to continue.</p>
+
+          <div class="qc-action-group" id="bc-mode-group">
+            <label class="qc-action">
+              <input type="radio" name="bc-mode" value="perChapter" checked />
+              <span>
+                <strong>Use each chapter's own settings</strong>
+                <small id="bc-per-chapter-note">Keeps every exception. Creates one job per group.</small>
+              </span>
+            </label>
+            <label class="qc-action">
+              <input type="radio" name="bc-mode" value="uniform" />
+              <span>
+                <strong>Use one setting for all selected chapters</strong>
+                <small id="bc-uniform-note">Uses this book's defaults for every chapter in this batch.</small>
+              </span>
+            </label>
+          </div>
+
+          <div class="qc-summary" id="bc-groups"></div>
+
+          <!--
+            Uniform settings are only shown once that option is chosen: showing
+            five selects for a choice the user has not made yet implies the
+            per-chapter route also depends on them, which it does not.
+          -->
+          <div id="bc-uniform-fields" hidden>
+            <label class="config-label">Language</label>
+            <select id="bc-language" class="config-select qc-field"></select>
+
+            <label class="config-label" id="bc-style-label">Style</label>
+            <select id="bc-style" class="config-select qc-field"></select>
+
+            <label class="config-label" id="bc-voice-label">AI Voice</label>
+            <select id="bc-voice" class="config-select qc-field"></select>
+
+            <label class="config-label">Script source</label>
+            <select id="bc-source" class="config-select qc-field">
+              <option value="ai">AI script (translate, then speak)</option>
+              <option value="antigravity">Antigravity CLI (local AI)</option>
+              <option value="custom">My saved script (spoken verbatim)</option>
+              <option value="original">Original book text (untranslated)</option>
+            </select>
+
+            <label class="config-label">Action</label>
+            <select id="bc-action" class="config-select qc-field">
+              <option value="both">Retell + narrate</option>
+              <option value="script">Preview retelling</option>
+              <option value="audio">Narrate existing script</option>
+            </select>
+
+            <label class="qc-default-row">
+              <input type="checkbox" id="bc-save-default">
+              <span>
+                Use these settings as this book's default
+                <small>Chapter overrides are kept, but ignored for this batch.</small>
+              </span>
+            </label>
+          </div>
+
+          <label class="qc-default-row">
+            <input type="checkbox" id="bc-remember">
+            <span>
+              Remember my batch preference for this book
+              <small>You can change it again from this dialog any time.</small>
+            </span>
+          </label>
+
+          <p class="qc-sub" id="bc-safety">
+            Chapter settings are never deleted — a uniform batch ignores them for this run only.
+          </p>
+        </div>
+        <div class="modal-footer qc-foot">
+          <button id="btn-bc-start" class="qc-start">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Script Editor: the exact text that will be spoken -->
+    <div class="modal-overlay hidden" id="script-editor-modal">      <div class="modal-content se-modal" role="dialog" aria-modal="true" aria-labelledby="se-title">
+        <div class="se-head">
+          <div>
+            <h3 style="margin:0;" id="se-title">My Script</h3>
+            <p class="qc-sub" id="se-sub">Pasted text is spoken word-for-word. The AI will not touch it.</p>
+          </div>
+          <button class="modal-close" id="se-close" aria-label="Close script editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <textarea id="se-text" class="se-text" spellcheck="false"
+          placeholder="Paste your Hinglish (English letters) or Hindi (देवनागरी) script here…&#10;&#10;Both are accepted — the voice handles either."></textarea>
+        <div class="se-status" id="se-status"></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin: 8px 0; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-medium);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="se-language" style="font-size:12px; font-weight:600; text-transform:uppercase; color:var(--text-tertiary);">Language:</label>
+            <select id="se-language" class="select select-sm se-lang-select">
+              <option value="hi">Hindi / Hinglish</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="se-voice" style="font-size:12px; font-weight:600; text-transform:uppercase; color:var(--text-tertiary);">Voice:</label>
+            <select id="se-voice" class="select select-sm se-voice-select"></select>
+          </div>
+        </div>
+        <div class="se-actions">
+          <!--
+            Paste is the first thing anyone does here, so it is a real button
+            rather than something you are expected to know. Where the browser
+            refuses clipboard access the button explains the Ctrl+V fallback
+            instead of failing silently.
+          -->
+          <button class="se-btn ghost" id="se-paste" title="Paste from clipboard (Ctrl+V)">
+            Paste
+          </button>
+          <button class="se-btn ghost" id="se-copy-ai" title="Duplicate latest AI script into the editor" style="display: none;">
+            Load AI script
+          </button>
+          <button class="se-btn ghost" id="se-copy-original" title="Copy original chapter text to clipboard">
+            Copy original text
+          </button>
+          <button class="se-btn ghost" id="se-delete">Delete script</button>
+          <span style="flex:1"></span>
+          <span class="se-hint" id="se-shortcut-hint">Ctrl+S to save · Esc to close</span>
+          <button class="se-btn ghost" id="se-cancel">Cancel</button>
+          <button class="se-btn ghost" id="se-save">Save script</button>
+          <!-- The reason the script was pasted at all: hearing it. -->
+          <button class="se-btn primary" id="se-save-generate">Save &amp; generate audio</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ChatGPT Web Automation Bridge Modal -->
+    <div class="modal-overlay hidden" id="chatgpt-bridge-modal">
+      <div class="modal-content modal-md" role="dialog" aria-modal="true" aria-labelledby="bridge-modal-title" style="max-width: 580px;">
+        <div class="modal-header">
+          <div>
+            <h3 id="bridge-modal-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <span>⚡</span>
+              <span>ChatGPT Web Automation Bridge</span>
+            </h3>
+            <p class="modal-sub" style="margin-top: 4px; color: var(--text-2);">
+              Auto-retell chapters using your free browser session on <code style="color: #38bdf8;">chatgpt.com</code> without any paid API key.
+            </p>
+          </div>
+          <button class="modal-close" id="chatgpt-bridge-close" aria-label="Close bridge dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 16px;">
+          <!-- Target Book Card -->
+          <div style="background: var(--surface-2, #1f232b); border: 1px solid var(--border-2, rgba(255,255,255,0.08)); border-radius: 10px; padding: 14px;">
+            <label for="bridge-book-select" style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px;">
+              Select Target Book
+            </label>
+            <select id="bridge-book-select" class="select" style="width: 100%; margin-bottom: 12px;"></select>
+            <div id="bridge-book-stats">
+              <span style="font-size: 12px; color: var(--text-2);">Loading book status…</span>
+            </div>
+          </div>
+
+          <!-- Setup Guide -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-1); display: flex; align-items: center; gap: 6px;">
+              <span>🚀</span>
+              <span>Quick 3-Step Setup</span>
+            </div>
+
+            <!-- Step 1 -->
+            <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-1, rgba(255,255,255,0.05)); border-radius: 8px; padding: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 12px; background: #38bdf8; color: #000; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">1</div>
+              <div style="font-size: 13px; line-height: 1.4;">
+                <strong>Install Tampermonkey or Violentmonkey</strong> in your browser (Brave, Chrome, Firefox, or Edge) if you haven't already.
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-1, rgba(255,255,255,0.05)); border-radius: 8px; padding: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 12px; background: #38bdf8; color: #000; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">2</div>
+              <div style="font-size: 13px; line-height: 1.4; flex-grow: 1;">
+                <div><strong>Install the Mozbot Bridge Userscript:</strong></div>
+                <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                  <button class="btn btn-primary btn-sm" id="bridge-install-btn" style="background: #10b981; border: none; font-size: 12px;">
+                    ⚡ 1-Click Install Userscript
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="bridge-copy-btn" style="font-size: 12px;">
+                    📋 Copy Script Code
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-1, rgba(255,255,255,0.05)); border-radius: 8px; padding: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 12px; background: #38bdf8; color: #000; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">3</div>
+              <div style="font-size: 13px; line-height: 1.4; flex-grow: 1;">
+                <div><strong>Open ChatGPT and click "Start Auto-Retell":</strong></div>
+                <div style="color: var(--text-2); font-size: 12px; margin-top: 2px;">
+                  You will see the floating Mozbot controller on the bottom-right of <code>chatgpt.com</code>. It will type prompts, wait for answers, and save scripts automatically!
+                </div>
+                <div style="margin-top: 8px;">
+                  <button class="btn btn-secondary btn-sm" id="bridge-open-chatgpt-btn" style="font-size: 12px;">
+                    🚀 Open chatgpt.com
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-2);">
+          <button class="btn btn-secondary" onclick="document.getElementById('chatgpt-bridge-modal').classList.add('hidden')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+
+    <!-- ===================== DOCK =====================
+         The player is docked to the bottom edge and is reachable in every app
+         state, so playback controls never move.
+    -->
+    <div class="shell-dock">
+
+      <!-- Player: only present once something is loaded -->
+      <div class="player hidden" id="sticky-player">
+        <div class="mobile-player-progress-bar" id="mobile-player-progress-bar"></div>
+        <div class="player-drag-handle" aria-hidden="true"></div>
+        <button class="player-close-expanded" id="btn-close-expanded" aria-label="Close expanded player">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="player-now">
+          <div class="player-art">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          </div>
+          <div class="col truncate">
+            <a class="player-title truncate" id="player-chapter-title" style="cursor: pointer;" title="View script">Select a chapter</a>
+            <span class="player-sub truncate" id="player-book-title"></span>
+          </div>
+          <!-- Jumping across a long book by pressing "next" dozens of times is
+               not navigation, so the whole track list is one click away. -->
+          <select id="player-chapter-select" class="select player-jump" aria-label="Jump to chapter"></select>
+        </div>
+
+        <div class="player-center">
+          <div class="player-buttons">
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-prev-chapter" title="Previous chapter" aria-label="Previous chapter">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-seek-back" title="Rewind 10 seconds" aria-label="Rewind 10 seconds">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M10 9l-4 3 4 3"/><path d="M20 12A8 8 0 1 0 12 20"/><text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text></svg>
+            </button>
+            <button class="btn btn-primary btn-icon" id="btn-play-pause" title="Play / pause" aria-label="Play or pause">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <svg class="icon-pause hidden" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-seek-forward" title="Skip 10 seconds" aria-label="Skip 10 seconds">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 9l4 3-4 3"/><path d="M4 12A8 8 0 1 1 12 20"/><text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" id="btn-next-chapter" title="Next chapter" aria-label="Next chapter">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+          </div>
+          <div class="player-timeline">
+            <span class="player-time" id="player-current-time">0:00</span>
+            <input type="range" class="player-seek" id="player-seek" min="0" max="100" value="0" aria-label="Seek" />
+            <span class="player-time" id="player-duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="player-right">
+          <button class="btn btn-ghost btn-icon btn-sm" id="btn-toggle-lyrics-view" title="Live Synced Script / Lyrics" aria-label="Live Synced Script" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17" aria-hidden="true">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8" y1="22" x2="16" y2="22"/>
+            </svg>
+          </button>
+          <button class="btn btn-ghost btn-icon btn-sm" id="btn-toggle-subtitles" title="Toggle Captions (CC)" aria-label="Toggle Captions" aria-pressed="true" style="margin-right: 4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" ry="2"/><path d="M7 15h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1H7v-2h3"/><path d="M14 15h2a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1h-2v-2h3"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-icon btn-sm" id="btn-player-view-script" title="View Script" style="margin-right: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="17" height="17" aria-hidden="true"><path d="M5 4.5h10a4 4 0 0 1 4 4V20H9a4 4 0 0 1-4-4V4.5Z"/><path d="M9 4v12a4 4 0 0 0 4 4"/><path d="M9 8h6M9 11h6"/></svg>
+          </button>
+          <!--
+            Speed is the most-adjusted control in an audiobook player, so it is
+            a real menu rather than a dropdown of five arbitrary rungs. The
+            chosen rate is remembered per book: a rate that suits a brisk
+            narrator rarely suits a slow one, and a single global value forces
+            a re-adjustment every time you switch books.
+          -->
+          <div class="speed-control">
+            <button class="btn btn-ghost btn-sm speed-trigger" id="player-speed-trigger"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="speed-menu"
+                    title="Playback speed">
+              <span id="player-speed-label">1×</span>
+            </button>
+            <div class="speed-menu hidden" id="speed-menu" role="menu" aria-label="Playback speed">
+              <div class="speed-presets" id="speed-presets"></div>
+              <label class="speed-custom">
+                <span>Custom</span>
+                <input type="number" id="speed-custom-input" class="input"
+                       min="0.25" max="4" step="0.05" aria-label="Custom playback speed" />
+              </label>
+              <p class="speed-hint">0.25× – 4×. Pitch is preserved.</p>
+              <!--
+                Speed and tone are remembered per book. "Make default" promotes
+                the current values to the app-wide default, the way a video
+                player does, so a preference has to be set once rather than on
+                every book.
+              -->
+              <div class="speed-default-row">
+                <button class="speed-default-btn" id="speed-make-default" type="button">
+                  Make default
+                </button>
+                <span class="speed-default-note" id="speed-default-note"></span>
+              </div>
+            </div>
+          </div>
+
+          <label class="label text-xs" for="player-pitch-slider">Tone</label>
+          <input type="range" id="player-pitch-slider" min="0.5" max="2" step="0.1" value="1"
+                 title="Tone — double-click to reset" />
+        </div>
+
+        <div id="subtitle-container" class="subtitle-display" hidden>
+          <div class="subtitle-pill" id="subtitle-pill">
+            <span class="subtitle-text" id="subtitle-text"></span>
+          </div>
+        </div>
+
+        <!-- Spotify Fullscreen Synced Lyrics / Script Card -->
+        <div id="player-lyrics-card" class="player-lyrics-card hidden">
+          <div class="lyrics-card-header">
+            <span class="lyrics-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+              LIVE SCRIPT
+            </span>
+            <button class="btn btn-ghost btn-xs lyrics-card-close" id="btn-close-lyrics-card" title="Close live script">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="lyrics-stream" id="lyrics-stream">
+            <div class="lyrics-empty">Select a chapter to load live synchronized script lines…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Bottom Navigation Bar -->
+      <nav class="mobile-nav-bar" id="mobile-nav-bar" role="navigation" aria-label="Mobile Navigation">
+        <button class="mobile-nav-item nav-btn" id="mobile-nav-home" data-view="home" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="mobile-nav-item nav-btn" id="mobile-nav-create" data-view="create" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Workspace</span>
+        </button>
+        <button class="mobile-nav-item nav-btn" id="mobile-nav-library" data-view="library" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span>Library</span>
+        </button>
+        <button class="mobile-nav-item" id="mobile-nav-settings" aria-label="Open settings panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ===================== ACTIVITY CONSOLE =====================
+         The trigger lives in the header (see above). The panel drops from it
+         like a menu, so it is anchored to its own control rather than to a
+         screen corner that something else also wants.
+    -->
+    <div class="console-panel hidden" id="console-panel" role="dialog" aria-label="Activity log">
+      <div class="console-head">
+        <span class="console-title">Activity log</span>
+        <span class="grow"></span>
+        <button type="button" id="log-copy" class="btn btn-ghost btn-sm">Copy</button>
+        <button type="button" id="log-clear" class="btn btn-ghost btn-sm">Clear</button>
+        <button type="button" id="console-close" class="btn btn-ghost btn-icon btn-sm" aria-label="Close activity log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="console-toolbar">
+        <input type="search" id="log-search" class="input" placeholder="Search logs…" aria-label="Search logs" />
+        <select id="log-level-filter" class="select" aria-label="Filter by level">
+          <option value="all">All levels</option>
+          <option value="error">Errors</option>
+          <option value="warn">Warnings</option>
+          <option value="success">Success</option>
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+        </select>
+      </div>
+      <div class="log-entries" id="log-entries" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <audio id="audio-element" preload="auto"></audio>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

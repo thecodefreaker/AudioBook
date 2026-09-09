@@ -1,0 +1,419 @@
+/* ===========================================================================
+   APP SHELL
+   ---------------------------------------------------------------------------
+   Replaces the vertical "Step 1 / 2 / 3 / 4" stack with a stable workspace.
+
+   Why this matters more than styling: in the step layout, Progress and Results
+   lived *below* the chapter list, so pressing Convert looked like it did
+   nothing until you scrolled. The log console lived inside the Progress step,
+   so it disappeared whenever that section was hidden — the real cause of
+   "sometimes I see the console, sometimes I don't".
+
+   Here every region has a permanent home and its own scroll context, so
+   nothing moves, reflows or vanishes as state changes.
+   =========================================================================== */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  /* `minmax(0, 1fr)`, not `1fr`: a grid track sized `1fr` has an implicit
+     minimum of `min-content`, so a tall sidebar or a long chapter list would
+     force the row taller than the viewport and push the player off-screen
+     instead of scrolling inside its own region. */
+  grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "header  header"
+    "sidebar content"
+    "dock    dock";
+  height: 100vh;
+  height: 100dvh;      /* avoids the mobile URL-bar jump */
+  overflow: hidden;    /* regions scroll individually, never the page */
+}
+
+/* --- Header ------------------------------------------------------------- */
+.shell-header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0 var(--space-6);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-1);
+  z-index: 20;
+}
+
+.brand { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+.brand-name {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* The book you are working on belongs in the header — it is the context for
+   everything else on screen. */
+.header-book {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-left: var(--space-4);
+  margin-left: var(--space-2);
+  border-left: 1px solid var(--border-1);
+}
+.header-book-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-1);
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.header-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+/* --- Sidebar ------------------------------------------------------------
+   Two separate rules are needed to make this column scroll, and having only
+   one of them is why it previously clipped instead.
+
+   1. `min-height: 0` on the column. A grid child defaults to
+      `min-height: auto` and refuses to shrink below its content, so the
+      column grows past the viewport and `overflow-y` never has anything to
+      act on.
+
+   2. `flex-shrink: 0` on the children. This is the one that was missing, and
+      it is the cause of the "cards are cut in half" symptom. In a flex
+      column, children shrink by default — so rather than overflowing and
+      producing a scrollbar, the cards were *compressed* to fit the available
+      height, and `.card { overflow: hidden }` then clipped whatever no longer
+      fitted inside them. The result looks like a rendering fault: content
+      sliced off, and no way to scroll to it, because as far as the browser is
+      concerned nothing is overflowing.
+
+   The bottom padding clears the docked player, which otherwise covers the
+   last control no matter how far the column is scrolled. */
+.shell-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  padding-bottom: var(--space-8);
+  background: var(--surface-0);
+  border-right: 1px solid var(--border-1);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Keep every panel at its natural height and let the column scroll. */
+.shell-sidebar > * { flex-shrink: 0; }
+
+.has-player .shell-sidebar { padding-bottom: calc(var(--player-h) + var(--space-6)); }
+
+/* --- Content ------------------------------------------------------------ */
+.shell-content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;      /* lets the inner list scroll instead of the page */
+  background: var(--surface-0);
+}
+
+/* Sticky toolbar: search and filters stay reachable while the list scrolls.
+
+   The horizontal padding is not a fixed gutter. Content regions below the
+   toolbar (`.library-grid`, `.chapters-list`, `.home`) are capped at
+   `--content-max` and centred, so a fixed gutter left the search field hard
+   against the window edge while the grid it filters sat centred hundreds of
+   pixels inboard — the toolbar appeared to belong to a different page.
+
+   `max()` gives the larger of the normal gutter and whatever it takes to line
+   up with a centred `--content-max` column, so the two agree at every width
+   and the border still spans the full width. */
+.content-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  padding-inline: max(var(--space-6), calc((100% - var(--content-max)) / 2));
+  background: var(--surface-0);
+  border-bottom: 1px solid var(--border-1);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.content-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Same gutter rule as the toolbar, for the same reason. Bottom padding is
+     enough that the last row clears the docked player instead of hiding
+     behind it. */
+  padding-block: var(--space-6) var(--space-12);
+  padding-inline: max(var(--space-6), calc((100% - var(--content-max)) / 2));
+}
+
+/* --- Dock: player + log console ---------------------------------------- */
+.shell-dock {
+  grid-area: dock;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-1);
+  /* 1001 puts the dock above the reader modal (1000), making the player
+     clickable while reading. It remains below secondary modals (1002+). */
+  z-index: 1001;
+}
+
+/* --- Scrollbars: present but quiet ------------------------------------- */
+.shell-sidebar::-webkit-scrollbar,
+.content-scroll::-webkit-scrollbar { width: 10px; }
+.shell-sidebar::-webkit-scrollbar-thumb,
+.content-scroll::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border: 3px solid var(--surface-0);
+  border-radius: var(--radius-full);
+}
+.shell-sidebar::-webkit-scrollbar-thumb:hover,
+.content-scroll::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+
+/* --- Segmented tabs ----------------------------------------------------- */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+.segmented button {
+  padding: 0 var(--space-4);
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+  white-space: nowrap;
+}
+.segmented button:hover { color: var(--text-1); }
+.segmented button[aria-selected="true"] {
+  background: var(--surface-4);
+  color: var(--text-1);
+}
+.segmented .count {
+  margin-left: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-4);
+}
+.segmented button[aria-selected="true"] .count { color: var(--text-2); }
+
+/* Both segmented groups are styled by the `.segmented button` rules above.
+   The filter group keeps its own width behaviour so it never squeezes the
+   search field. */
+.filter-tabs { flex-shrink: 0; }
+
+/* The play/pause button swaps icons rather than swapping buttons, so keyboard
+   focus is never lost mid-playback. */
+.icon-play, .icon-pause { display: block; }
+
+/* --- Responsive ---------------------------------------------------------
+   Three breakpoints, each triggered by a real failure of the layout rather
+   than a device name:
+     1280px — the sidebar starts squeezing the chapter rows
+     1000px — two columns no longer fit at all; sidebar becomes a slide-over
+      640px — the toolbar can no longer sit on one line
+   ------------------------------------------------------------------------ */
+
+@media (max-width: 1280px) {
+  .shell { grid-template-columns: 280px minmax(0, 1fr); }
+}
+
+@media (max-width: 1000px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "content"
+      "dock";
+  }
+
+  /* Below this width the sidebar becomes a slide-over rather than shrinking
+     into an unusable column. */
+  .shell-sidebar {
+    position: fixed;
+    top: var(--header-h);
+    bottom: 0;
+    left: 0;
+    width: min(var(--sidebar-w), 86vw);
+    transform: translateX(-100%);
+    transition: transform var(--duration) var(--ease-out);
+    z-index: 30;
+    box-shadow: var(--shadow-3);
+    /* The docked player overlaps the bottom of the slide-over, so the last
+       control was unreachable no matter how far you scrolled. */
+    padding-bottom: calc(var(--player-h) + var(--space-6));
+  }
+  .shell-sidebar.open { transform: translateX(0); }
+
+  /* A scrim makes it obvious the sidebar is a temporary layer, and gives a
+     large, obvious target to dismiss it. */
+  .sidebar-scrim {
+    position: fixed;
+    inset: var(--header-h) 0 0 0;
+    background: hsl(0 0% 0% / 0.5);
+    z-index: 29;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration) var(--ease);
+  }
+  .sidebar-scrim.show { opacity: 1; pointer-events: auto; }
+
+  .header-book { display: none; }
+}
+
+@media (min-width: 1001px) {
+  .sidebar-toggle { display: none; }
+  .sidebar-scrim { display: none; }
+}
+
+@media (max-width: 640px) {
+  /* The toolbar becomes two rows: search on its own line (it needs the width),
+     filters and sort beneath it. */
+  .content-toolbar {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+  .search-field { flex: 1 1 100%; max-width: none; }
+  .content-scroll { padding: var(--space-3); }
+
+  .brand-name { display: none; }
+  .shell-header { padding: 0 var(--space-3); }
+
+  /* The desktop nav tabs (Home / Workspace / Library) and the connection
+     indicator are redundant on mobile — the bottom nav bar handles navigation.
+     Hiding them prevents the header from overflowing at 390px. */
+  .shell-header nav.segmented { display: none !important; }
+  .shell-header .conn-indicator { display: none !important; }
+
+  /* "New book" label text is still useful on mobile but the SVG icon
+     alone reads fine at small sizes — keep both for now; if the header
+     still overflows at very small widths this can be hidden further. */
+
+  /* Mobile Dock & Navigation Bar */
+  .shell-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(13, 14, 20, 0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 52;
+    flex-shrink: 0;
+  }
+
+  button.mobile-nav-item,
+  .mobile-nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    color: var(--text-3, #9ca3af) !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    min-width: 60px !important;
+    min-height: 44px !important;
+    position: relative !important;
+  }
+
+  .mobile-nav-item svg {
+    transition: transform 0.2s ease, stroke 0.2s ease;
+  }
+
+  .mobile-nav-item:active {
+    transform: scale(0.92);
+  }
+
+  button.mobile-nav-item[aria-selected="true"],
+  .mobile-nav-item[aria-selected="true"] {
+    color: var(--accent-text, #c084fc) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+  }
+
+  .mobile-nav-item[aria-selected="true"] svg {
+    stroke: var(--accent-text, #c084fc);
+    transform: translateY(-1px);
+  }
+
+  .mobile-nav-item[aria-selected="true"]::after {
+    content: '';
+    position: absolute;
+    bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+    width: 18px;
+    height: 3px;
+    background: var(--accent-primary, #a855f7);
+    border-radius: 999px;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+  }
+
+  .content-scroll {
+    padding-bottom: calc(56px + 24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #app.has-player .content-scroll {
+    padding-bottom: calc(56px + 56px + 16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar-scrim {
+    inset: 0;
+    z-index: 45;
+  }
+}

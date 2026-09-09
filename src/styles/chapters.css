@@ -1,0 +1,596 @@
+/* ===========================================================================
+   CHAPTER LIST
+   ---------------------------------------------------------------------------
+   The chapter row is the densest thing in the app: a checkbox, a title, a
+   variable number of badges and up to four actions. Previously it was built
+   from ~20 inline style="…" attributes per row, which is why the same badge
+   rendered three different ways and why rows jumped as their state changed.
+
+   Two rules keep it stable:
+     · fixed columns — the actions column has a reserved width, so a row does
+       not reflow when "Convert" becomes "Play / Re-convert".
+     · one row height — status is shown by colour and badge, never by adding
+       another line, so the list never jitters while a conversion runs.
+   =========================================================================== */
+
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Width and centring are handled by `.content-scroll`'s gutter, so the list
+     lines up with the toolbar above it rather than computing its own cap. */
+}
+
+/* --- Row ---------------------------------------------------------------- */
+.ch-row {
+  display: grid;
+  /* checkbox · number · title (takes the slack) · badges · actions.
+     The badge column is `minmax(0, auto)` so it can be squeezed instead of
+     forcing the title to collapse, and the actions column has a reserved
+     width so a row does not reflow when "Convert" becomes "Play". */
+  grid-template-columns: auto 2.5ch minmax(0, 1fr) minmax(0, auto) auto;
+  align-items: center;
+  gap: var(--space-4);
+  /* Rows were 8px/12px — dashboard density. A chapter is a piece of content
+     you choose between, not a spreadsheet line, so it gets the height to read
+     as a card. This is the single biggest contributor to the list feeling
+     cramped. */
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease);
+}
+.ch-row:hover {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+}
+
+.ch-row.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* The chapter currently playing is app-wide state, so it is marked with the
+   accent rail rather than a colour that could be mistaken for selection. */
+.ch-row.playing { border-color: var(--accent); }
+.ch-row.playing .ch-num { color: var(--accent-text); }
+
+.ch-row.is-error { border-color: hsl(0 72% 58% / 0.35); }
+
+/* --- Welcome / empty state ----------------------------------------------- */
+/* Shown only while no book is open. Its whole job is to state the purpose of
+   the app and offer the two ways in, so it deliberately holds nothing else. */
+.welcome {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  overflow-y: auto;
+  /* A soft wash rather than a flat panel — enough to feel considered, not so
+     much that it competes with the text on top of it. */
+  background:
+    radial-gradient(60% 50% at 50% 0%, hsl(258 85% 66% / 0.10), transparent 70%),
+    radial-gradient(40% 40% at 85% 100%, hsl(205 85% 58% / 0.07), transparent 70%);
+}
+.welcome.hidden { display: none; }
+
+.welcome-inner {
+  max-width: 480px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.welcome-art {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-xl);
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+}
+
+.welcome-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  color: var(--text-1);
+  text-wrap: balance;
+}
+.welcome-sub {
+  font-size: var(--text-md);
+  color: var(--text-3);
+  max-width: 40ch;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-3);
+}
+.welcome-actions .btn { min-height: 40px; padding-inline: var(--space-5); }
+
+.welcome-hint {
+  font-size: var(--text-xs);
+  color: var(--text-4);
+  margin-top: var(--space-2);
+}
+
+/* Dropping a file anywhere is accepted, so the page says so while a file is
+   being dragged over it. */
+body.file-hover .welcome {
+  outline: 2px dashed var(--accent-border);
+  outline-offset: -12px;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.workspace.hidden { display: none; }
+
+/* --- Book overview -------------------------------------------------------
+   The book card now lives in the sidebar and is styled in `workspace.css`.
+   It used to be a full-width banner here, above the chapter list — which
+   spent the widest space in the app on figures you read once, and pushed the
+   list (the part that has to scale to a thousand rows) below the fold.
+
+   Only the shared visibility rules stay behind; the layout rules were removed
+   rather than left to fight the card's own. */
+.book-overview.hidden { display: none; }
+.book-resume[hidden] { display: none; }
+
+/* --- Chapter states ------------------------------------------------------ */
+/* Ready, generating and untouched must be distinguishable at a glance and
+   without relying on colour alone, so each also differs in weight or rail. */
+.ch-row.is-ready .ch-num { color: var(--ok-text); }
+.ch-row.is-generating { border-color: var(--accent-border); }
+.ch-row.is-untouched .ch-title { color: var(--text-2); }
+
+/* --- Selection toolbar --------------------------------------------------- */
+/* Only exists while a selection does. It is a flex sibling of the scrolling
+   list rather than a floating overlay, so it can never cover the last chapter
+   row or collide with the docked player below it. */
+.selection-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-3);
+  border: 1px solid var(--border-3);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-3);
+  animation: slideUp var(--duration) var(--ease-out);
+}
+.selection-bar[hidden] { display: none; }
+
+.selection-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+}
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .selection-bar {
+    position: fixed;
+    bottom: calc(60px + var(--space-4)); /* Above the compact player */
+    left: var(--space-4);
+    right: var(--space-4);
+    z-index: 40; /* Above most things, below modals */
+    border-radius: var(--radius-lg);
+    justify-content: center;
+    margin: 0;
+    box-shadow: var(--shadow-4);
+  }
+  .selection-actions { width: 100%; }
+  .selection-actions .btn { flex: 1; }
+  
+  /* If player is expanded, selection bar should probably be hidden or sit above */
+  .has-player .selection-bar { bottom: calc(60px + var(--space-4)); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ch-check {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.ch-num {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-4);
+  text-align: right;
+}
+
+.ch-main { min-width: 0; }
+
+.ch-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ch-meta {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  margin-top: var(--space-1);
+}
+
+/* --- Chapter override chip ---------------------------------------------- */
+/* A chapter whose settings disagree with the book's has to say so on the row.
+   Kept small and low-contrast: it is a fact about the row, not a warning —
+   an override is a legitimate choice, not a problem to be fixed. */
+.ch-override {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--space-2);
+  padding: 1px 4px 1px 6px;
+  border: 1px solid var(--accent-dim, rgba(129, 140, 248, 0.4));
+  border-radius: var(--radius-sm, 4px);
+  color: var(--accent, #818cf8);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.ch-override:hover { background: rgba(129, 140, 248, 0.12); }
+
+.ch-override-reset {
+  background: none;
+  border: none;
+  padding: 0 1px;
+  color: inherit;
+  opacity: 0.65;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ch-override-reset:hover { opacity: 1; }
+
+/* --- Badges / status ---------------------------------------------------- */
+/* What a converted chapter *is* — language, voice, style, whether it came from
+   AI or your own script — is the reason multiple versions exist at all, so it
+   is shown on the row rather than hidden behind a dialog. */
+.ch-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  /* One line, always. Wrapping made rows change height as a conversion
+     finished, which shifted every row below it — the jitter the fixed-height
+     row rule exists to prevent. Badges are ordered most-specific-first, so
+     clipping the tail loses the least information. */
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 42ch;
+  overflow: hidden;
+}
+/* Individual badges keep their own width; the stack clips instead of letting
+   long voice or style names squash every badge into unreadable slivers. */
+.ch-badges > * { flex: 0 0 auto; }
+
+/* Below tablet width the row has to become two lines anyway, so the badges
+   give way to the title and the actions rather than eating both. */
+@media (max-width: 720px) {
+  .ch-badges { display: none; }
+}
+
+/* --- Actions ------------------------------------------------------------ */
+.ch-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.ch-mobile-more { display: none; }
+
+/* Secondary actions appear on hover/focus only, so a list of 500 rows is not
+   a wall of buttons — but they stay visible on touch, where there is no hover. */
+.ch-actions .on-hover {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+.ch-row:hover .ch-actions .on-hover,
+.ch-row:focus-within .ch-actions .on-hover { opacity: 1; }
+
+@media (max-width: 1000px) {
+  .ch-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+  }
+  .ch-num { display: none; }
+  .ch-check {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+  }
+  .ch-main {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .ch-title {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: normal;
+    line-height: 1.35;
+    color: var(--text-1);
+    word-break: break-word;
+  }
+  .ch-meta {
+    font-size: 12px;
+    margin-top: 3px;
+    color: var(--text-3);
+  }
+  
+  /* Force all secondary elements to their own full-width row */
+  .ch-badges, .ch-progress, .ch-actions, .ch-error {
+    flex: 0 0 100%;
+    max-width: 100%; /* Ensure max-width doesn't prevent wrapping */
+  }
+  
+  .ch-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .ch-progress {
+    margin-top: 4px;
+  }
+  .ch-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 8px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-1);
+  }
+  .ch-actions > * { display: inline-flex !important; }
+  .ch-actions .btn-split .btn-split-side { display: inline-flex !important; }
+  .ch-actions .btn {
+    font-size: 12px;
+    padding-inline: 10px;
+    min-height: 34px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .ch-actions .btn-secondary {
+    background-color: var(--surface-2, #242533);
+    color: var(--text-1, #f3f4f6);
+    border: 1px solid var(--border-2, rgba(255, 255, 255, 0.15));
+  }
+  .ch-actions .btn-ghost {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-2, #e2e4ea);
+  }
+  .ch-actions .on-hover { opacity: 1; }
+  .ch-mobile-more { display: none !important; }
+}
+
+@media (hover: none) and (min-width: 641px) {
+  .ch-actions .on-hover { opacity: 1; }
+}
+
+.ch-version-select {
+  height: 26px;
+  width: auto;
+  /* The select is the one badge-column item allowed to shrink: its text is
+     already elided by the control itself, so narrowing it costs less than
+     clipping the version-count button beside it. */
+  flex: 0 1 auto;
+  min-width: 8ch;
+  max-width: 200px;
+  font-size: var(--text-xs);
+  padding: 0 var(--space-6) 0 var(--space-2);
+}
+
+/* Between tablet and laptop there is not room for a full badge stack next to
+   a readable title, so the stack tightens before it is dropped entirely. */
+@media (max-width: 1100px) {
+  .ch-badges { max-width: 24ch; }
+  .ch-version-select { max-width: 130px; }
+}
+
+/* --- Inline progress ---------------------------------------------------- */
+.ch-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.ch-progress .progress { width: 64px; flex-shrink: 0; }
+
+/* --- Error -------------------------------------------------------------- */
+.ch-error {
+  grid-column: 3 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-soft);
+  border: 1px solid hsl(0 72% 58% / 0.3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--danger-text);
+  word-break: break-word;
+}
+/* Recovery actions sit on their own line: a failure message can be long, and
+   buttons that reflow into the middle of a sentence are hard to hit. */
+.ch-error-actions {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+}
+
+/* --- Chapter override chip ---------------------------------------------
+   Marks a chapter whose settings disagree with the book default. Small and
+   quiet: it is a fact worth knowing, not a warning. */
+.ch-override {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--space-2);
+  padding: 1px 6px;
+  border: 1px solid hsl(38 92% 55% / 0.4);
+  border-radius: var(--radius-sm);
+  background: hsl(38 92% 55% / 0.12);
+  color: hsl(38 92% 70%);
+  font-size: 0.68rem;
+  font-weight: 650;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.ch-override-reset {
+  border: 0;
+  background: none;
+  padding: 0 1px;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.ch-override-reset:hover { opacity: 1; }
+
+/* The Failed tab is destructive-adjacent, so it reads as a warning rather
+   than as just another filter. */
+.filter-tab-failed[aria-selected="true"] { color: var(--danger-text); }
+
+/* --- Toolbar bits ------------------------------------------------------- */
+.search-field { position: relative; display: flex; align-items: center; max-width: 380px; }
+.search-field svg {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-4);
+  pointer-events: none;
+}
+.search-field .input { padding-left: var(--space-8); }
+
+.select-all-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.select-all-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* --- Chapter badges (shared with the versions modal) -------------------- */
+.chapter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-2);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.chapter-badge.badge-hi { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); }
+.chapter-badge.badge-en { background: var(--info-soft); color: var(--info-text); border-color: hsl(205 85% 58% / 0.3); }
+.chapter-badge.badge-src-custom   { background: var(--warn-soft);   color: var(--warn-text);   border-color: hsl(38 92% 55% / 0.3); }
+.chapter-badge.badge-src-ai       { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); }
+.chapter-badge.badge-src-original { background: var(--info-soft);   color: var(--info-text);   border-color: hsl(205 85% 58% / 0.3); }
+
+/* --- Reader tabs -------------------------------------------------------- */
+/* Which text you are looking at — the book's own words, the AI retelling, or
+   your script — is the single most important fact in the reader, because all
+   three can differ. It is a tab strip, not three loose buttons. */
+.reader-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+.reader-tab {
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+.reader-tab:hover { color: var(--text-1); }
+.reader-tab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.reader-tab[aria-selected="true"] {
+  background: var(--surface-4);
+  color: var(--text-1);
+}
+@media (pointer: coarse) {
+  .reader-tab { height: 40px; }
+}
+
+/* The quick-convert dialog is a decision form, so it is capped at a readable
+   width rather than stretching with the viewport. */
+.qc-modal {
+  max-width: 520px;
+  width: 100%;
+}

@@ -1,0 +1,736 @@
+# Audiobook AI — Autonomous UX Expert, Product Designer & UI Engineer
+
+You are responsible for improving the existing Audiobook AI application.
+
+Do NOT assume the current UI is correct.
+
+Do NOT simply make the current UI prettier.
+
+Act as all of the following:
+
+* Senior UX researcher
+* Product designer
+* Interaction designer
+* Responsive design specialist
+* Accessibility specialist
+* Frontend architect
+* UI engineer
+
+Your job is to inspect the REAL existing application and independently determine how the product should work.
+
+The product supports:
+
+1. Reading books
+2. Listening to audiobooks
+3. Converting text/chapters into audiobooks
+4. Managing large books with many chapters
+
+The goal is to create an excellent experience across desktop, tablet and mobile.
+
+---
+
+# PHASE 1 — UNDERSTAND THE EXISTING PRODUCT
+
+Before changing UI, inspect:
+
+* all routes
+* all screens
+* navigation
+* current components
+* current layout
+* current responsive behavior
+* chapter workflows
+* reading workflow
+* listening workflow
+* audio player
+* conversion workflow
+* bulk chapter actions
+* search
+* filters
+* dialogs
+* drawers
+* mobile layouts
+* tablet layouts
+* loading states
+* error states
+* success states
+
+Use the actual running application whenever possible.
+
+Use realistic data.
+
+Do not rely only on source code.
+
+---
+
+# PHASE 2 — THINK LIKE A USER
+
+For each major workflow ask:
+
+"What is the user actually trying to accomplish?"
+
+Examples:
+
+Library:
+"What book do I want to continue?"
+
+Book:
+"Where did I leave off?"
+
+Reading:
+"How do I comfortably read this chapter?"
+
+Listening:
+"How do I start/resume audio?"
+
+Conversion:
+"How do I turn this chapter into good-quality audio?"
+
+Chapter management:
+"How do I find, filter, convert or listen to a specific chapter?"
+
+Do not design around the database structure.
+
+Design around user goals.
+
+---
+
+# PHASE 3 — FIND UX PROBLEMS YOURSELF
+
+Inspect the current UI and identify problems such as:
+
+* incorrect button placement
+* unclear primary action
+* too many competing actions
+* weak information hierarchy
+* unnecessary technical information
+* confusing navigation
+* bad spacing
+* poor grouping
+* excessive cards
+* excessive badges
+* awkward chapter rows
+* poor reading proportions
+* excessive empty space
+* content being too narrow
+* buttons too small
+* controls too far apart
+* confusing icons
+* unclear interaction states
+* weak hover states
+* poor click feedback
+* missing loading states
+* missing success/error feedback
+* stale information
+* UI state not matching actual application state
+* bad mobile composition
+* bad tablet composition
+* desktop layout being squeezed onto smaller screens
+* horizontal overflow
+* nested scrolling
+* sticky elements covering content
+* modal/drawer problems
+* inconsistent component behavior
+
+Do not wait for me to tell you these problems.
+
+Find them yourself.
+
+---
+
+# PHASE 4 — PRIORITIZE PROBLEMS
+
+For every major problem determine:
+
+* What is wrong?
+* Why is it bad UX?
+* Which users are affected?
+* How severe is it?
+* What should replace it?
+
+Use:
+
+CRITICAL
+HIGH
+MEDIUM
+LOW
+
+Prioritize problems that affect task completion over cosmetic problems.
+
+---
+
+# PHASE 5 — REDESIGN THE PRODUCT EXPERIENCE
+
+Do not automatically preserve the existing screen structure.
+
+Determine the best information architecture for the product.
+
+Think in terms of:
+
+Home
+Library
+Book
+Reading
+Listening
+Chapters
+Conversion
+Notes
+Bookmarks
+Search
+Settings
+
+Decide which should be:
+
+* full pages
+* tabs
+* drawers
+* side panels
+* bottom sheets
+* modals
+* persistent controls
+
+Explain why.
+
+---
+
+# PHASE 6 — DESIGN THE IDEAL USER JOURNEY
+
+Design the complete journey:
+
+Discover book
+→ Open book
+→ Resume reading/listening
+→ Navigate chapter
+→ Read
+→ Listen
+→ Convert when needed
+→ Track progress
+→ Return later
+
+Also design:
+
+Book
+→ Chapters
+→ Select multiple chapters
+→ Convert
+→ Conversion queue
+→ Audio ready
+→ Listen
+
+The user should always know:
+
+1. Where am I?
+2. What am I doing?
+3. What can I do?
+4. What just happened?
+5. What should I do next?
+
+---
+
+# PHASE 7 — REDESIGN BUTTON HIERARCHY
+
+For every important screen determine:
+
+PRIMARY ACTION
+SECONDARY ACTIONS
+TERTIARY ACTIONS
+DANGEROUS ACTIONS
+
+Do not make every button visually equal.
+
+For every important button document:
+
+* position
+* size
+* label
+* icon
+* purpose
+* hover state
+* pressed state
+* loading state
+* disabled state
+* success state
+* error state
+
+Button placement must follow user task priority.
+
+---
+
+# PHASE 8 — DESIGN THE READING EXPERIENCE
+
+The reading experience is a PRIMARY product feature.
+
+Do not place it below a large chapter-management dashboard.
+
+Determine:
+
+* reading width
+* typography
+* margins
+* font controls
+* theme controls
+* chapter navigation
+* bookmark placement
+* notes/highlights
+* previous/next controls
+* reading progress
+* audio synchronization
+* fullscreen/focus mode
+
+The reading area must remain comfortable on:
+
+360px
+390px
+430px
+768px
+834px
+1024px
+1280px
+1440px
+1600px+
+
+No horizontal scrolling.
+
+No clipping.
+
+No narrow text column caused by side panels.
+
+---
+
+# PHASE 9 — DESIGN THE LISTENING EXPERIENCE
+
+Determine the ideal:
+
+* full player
+* mini player
+* progress bar
+* play/pause
+* seek controls
+* previous/next
+* speed
+* volume
+* sleep timer
+* chapter selector
+* queue
+* auto-next
+* loading
+* buffering
+* error
+* completed state
+
+The UI must always reflect the real audio state.
+
+Example:
+
+PLAY
+→ Loading
+→ Playing
+→ Pause
+
+not
+
+PLAY
+→ visually Pause
+while the audio is still loading.
+
+---
+
+# PHASE 10 — DESIGN THE CONVERSION EXPERIENCE
+
+Do not expose all technical controls at once.
+
+Create progressive disclosure.
+
+Recommended structure:
+
+Content
+→ Voice
+→ Style
+→ Advanced
+→ Generate
+→ Progress
+→ Ready / Error
+
+Determine what should be visible by default.
+
+Determine what belongs under Advanced.
+
+Design:
+
+* single chapter conversion
+* multi-chapter conversion
+* queue
+* progress
+* retry
+* generated versions
+* download
+* play
+
+---
+
+# PHASE 11 — CHAPTER EXPERIENCE
+
+Redesign chapter rows based on user needs.
+
+Primary information:
+
+* chapter number
+* title
+* reading/listening progress
+* audio availability
+
+Secondary information should not overwhelm the title.
+
+Do not put every technical metadata item directly in the row.
+
+Move secondary actions into contextual menus where appropriate.
+
+For thousands of chapters, consider:
+
+* search
+* filtering
+* sorting
+* pagination or virtualization
+* bulk selection
+* bulk actions
+* chapter status filters
+
+---
+
+# PHASE 12 — RESPONSIVE DESIGN
+
+Do NOT simply shrink desktop.
+
+Create deliberate layouts for:
+
+DESKTOP
+TABLET
+MOBILE
+
+Desktop can use multiple panels.
+
+Tablet should collapse panels intelligently.
+
+Mobile should use:
+
+* drawers
+* bottom sheets
+* collapsible sections
+* full-screen focused modes
+
+Test:
+
+360
+390
+430
+768
+834
+1024
+1280
+1440
+1600+
+
+There must be:
+
+* no horizontal overflow
+* no clipping
+* no overlap
+* no inaccessible controls
+* no accidental nested scrolling
+* no controls hidden behind sticky elements
+
+---
+
+# PHASE 13 — ACCESSIBILITY
+
+Check:
+
+* keyboard navigation
+* visible focus
+* contrast
+* semantic buttons
+* labels for icon buttons
+* touch target sizes
+* screen reader labeling where appropriate
+* reduced motion
+* readable typography
+
+Do not rely on color alone to communicate state.
+
+---
+
+# PHASE 14 — CREATE THE NEW DESIGN BEFORE IMPLEMENTING IT
+
+Before making major changes, produce a proposed design specification.
+
+For each screen show:
+
+SCREEN
+↓
+USER GOAL
+↓
+LAYOUT
+↓
+PRIMARY ACTION
+↓
+SECONDARY ACTIONS
+↓
+RESPONSIVE BEHAVIOR
+↓
+INTERACTION STATES
+
+For important screens, produce an ASCII/wireframe layout or another clear structural description.
+
+At minimum redesign:
+
+1. Home
+2. Library
+3. Book Overview
+4. Chapter Navigator
+5. Reading Mode
+6. Listening Mode
+7. Mini Audio Player
+8. Conversion Studio
+9. Conversion Queue
+10. Notes/Bookmarks
+11. Search
+12. Mobile Reading
+13. Mobile Listening
+
+---
+
+# PHASE 15 — COMPARE OLD VS NEW
+
+For every major screen explain:
+
+CURRENT PROBLEM
+→
+DESIGN CHANGE
+→
+UX BENEFIT
+
+Example:
+
+Current:
+Chapter rows expose too much technical metadata.
+
+New:
+Primary row focuses on chapter + status + primary action; technical actions move into a menu.
+
+Benefit:
+User can scan chapters faster and the primary action becomes obvious.
+
+---
+
+# PHASE 16 — MAKE PRODUCT DECISIONS
+
+Do not ask me to decide every small UI issue.
+
+When several options exist, choose the most usable option based on UX principles.
+
+Only ask me when there is a REAL product decision that cannot be inferred.
+
+For example:
+
+Good question:
+"Should audiobook progress and reading progress be independent or synchronized?"
+
+Bad question:
+"Should this button be 14px or 16px?"
+
+Make minor design decisions yourself.
+
+---
+
+# PHASE 17 — IMPLEMENT AFTER THE DESIGN IS VALIDATED INTERNALLY
+
+Once you have analyzed the application and established the new design direction, implement it.
+
+Do not blindly rewrite the entire application.
+
+Preserve:
+
+* working business logic
+* APIs
+* data
+* audio functionality
+* conversion functionality
+* existing features
+
+Change:
+
+* layout
+* component hierarchy
+* interaction design
+* navigation
+* information hierarchy
+* responsive behavior
+* visual system
+* button placement
+* feedback states
+
+Refactor only where required for the new UX.
+
+---
+
+# PHASE 18 — TEST THE RESULT LIKE A REAL USER
+
+Test complete journeys.
+
+Journey 1:
+
+Open application
+→ Library
+→ Book
+→ Continue Reading
+→ Read
+→ Play
+→ Pause
+→ Next chapter
+
+Journey 2:
+
+Library
+→ Book
+→ Chapters
+→ Search chapter
+→ Open chapter
+→ Listen
+
+Journey 3:
+
+Book
+→ Chapters
+→ Select multiple
+→ Convert
+→ Queue
+→ Generation
+→ Play generated audio
+
+Journey 4:
+
+Mobile
+→ Library
+→ Book
+→ Reading
+→ Open chapters
+→ Switch chapter
+→ Play audio
+
+Journey 5:
+
+Return to application
+→ Resume exactly where user left off
+
+---
+
+# PHASE 19 — VISUAL QA
+
+Inspect every major screen at:
+
+360
+390
+430
+768
+834
+1024
+1280
+1440
+1600+
+
+Look specifically for:
+
+* bad placement
+* broken hierarchy
+* whitespace problems
+* inconsistent spacing
+* clipped content
+* horizontal overflow
+* awkward controls
+* unreadable text
+* duplicated actions
+* weak feedback
+* incorrect states
+* mobile problems
+* tablet problems
+
+Fix what you find.
+
+Repeat until stable.
+
+---
+
+# PHASE 20 — FINAL DELIVERABLE
+
+At the end provide:
+
+## 1. UX Diagnosis
+
+Top problems and why they matter.
+
+## 2. New Information Architecture
+
+What screens exist and why.
+
+## 3. User Journeys
+
+How users move through the application.
+
+## 4. Design System
+
+Typography, spacing, buttons, cards, states, etc.
+
+## 5. Responsive Strategy
+
+Desktop/tablet/mobile behavior.
+
+## 6. Screen-by-Screen Redesign
+
+Detailed layout and interactions.
+
+## 7. Implementation Changes
+
+What was actually changed.
+
+## 8. Remaining Risks
+
+Anything that still requires product decisions.
+
+## 9. Final UX Score
+
+Rate:
+
+Navigation
+Reading
+Listening
+Conversion
+Library
+Chapter management
+Feedback
+Responsive UX
+Mobile UX
+Overall
+
+---
+
+# MOST IMPORTANT RULE
+
+Do not optimize the current interface simply because it already exists.
+
+Ask:
+
+"What would be the best experience for a person using this product?"
+
+Then work backwards to the UI.
+
+The goal is NOT:
+
+"Make the existing UI prettier."
+
+The goal is:
+
+"Make Audiobook AI easier, clearer, faster, and more enjoyable to use."
+
+You are authorized to recommend substantial layout and interaction changes when the current design creates UX problems.
+
+Do not sacrifice usability merely to preserve the current layout.

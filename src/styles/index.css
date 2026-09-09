@@ -1,0 +1,250 @@
+/* ===========================================================================
+   BASE
+   ---------------------------------------------------------------------------
+   Reset and document defaults.
+
+   The old sticky header, the "Step 1/2/3/4" wizard chrome and the centred
+   `app-main` wrapper all described a layout that no longer exists, so those
+   rules are gone rather than left behind to be reasoned about later.
+
+   Tokens live in tokens.css; components in primitives.css, shell.css,
+   chapters.css and components.css.
+   =========================================================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font);
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* The shell owns scrolling - each region scrolls independently - so the
+     page itself must not. This is what stops the whole layout drifting
+     upward as a long chapter list grows. */
+  overflow: hidden;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a { color: var(--accent-text); }
+
+/* --- Views -------------------------------------------------------------- */
+.view {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.view.active { display: flex; }
+
+/* --- Scrollbars --------------------------------------------------------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-1);
+}
+
+/* --------------------------------------------------------------------------
+   AudioBook AI reading-room treatment
+   A quiet, editorial layer over the existing DOM contracts. The application
+   remains a three-region shell; this pass changes emphasis, not behaviour.
+   -------------------------------------------------------------------------- */
+:root {
+  --surface-0: hsl(236 18% 7%);
+  --surface-1: hsl(236 17% 10%);
+  --surface-2: hsl(235 15% 14%);
+  --surface-3: hsl(235 14% 18%);
+  --surface-4: hsl(235 13% 23%);
+  --text-1: hsl(38 24% 94%);
+  --text-2: hsl(35 13% 72%);
+  --text-3: hsl(35 8% 52%);
+  --text-4: hsl(35 8% 38%);
+  --accent: hsl(264 52% 67%);
+  --accent-hover: hsl(264 58% 74%);
+  --accent-active: hsl(264 48% 58%);
+  --accent-soft: hsl(264 52% 67% / .13);
+  --accent-border: hsl(264 52% 67% / .35);
+  --accent-text: hsl(264 70% 83%);
+  --header-h: 68px;
+  --player-h: 72px;
+}
+
+body {
+  letter-spacing: .005em;
+  background: var(--surface-0);
+}
+
+.shell-header {
+  background: hsl(236 18% 8% / .96);
+  border-bottom-color: hsl(35 20% 90% / .1);
+  backdrop-filter: blur(14px);
+}
+.brand-mark { border-radius: 10px; background: var(--accent-active); }
+.brand-name { letter-spacing: -.035em; font-size: 16px; }
+.header-book { border-left-color: hsl(35 20% 90% / .12); }
+.header-book-title { font-weight: 500; color: var(--text-2); }
+.conn-indicator { color: var(--text-3); }
+.segmented { background: hsl(235 15% 14% / .8); border: 1px solid var(--border-1); }
+.segmented button { min-height: 34px; }
+.segmented button[aria-selected="true"] { background: var(--surface-4); color: var(--text-1); }
+
+.shell-sidebar {
+  background: hsl(236 18% 8%);
+  border-right-color: hsl(35 20% 90% / .09);
+  padding: 20px 16px;
+  gap: 14px;
+}
+.shell-content { background: var(--surface-0); }
+.content-toolbar {
+  background: hsl(236 18% 7% / .93);
+  border-bottom-color: hsl(35 20% 90% / .09);
+  padding-block: 18px;
+}
+.content-scroll { padding-block: 28px calc(var(--player-h) + 40px); }
+
+.welcome {
+  background:
+    radial-gradient(45% 40% at 50% 18%, hsl(264 52% 67% / .09), transparent 72%),
+    var(--surface-0);
+}
+.welcome-inner { max-width: 620px; gap: 18px; }
+.welcome-art {
+  width: 64px; height: 64px; border-radius: 20px;
+  background: var(--surface-2); border-color: var(--accent-border);
+}
+.welcome-title {
+  max-width: 15ch;
+  font-family: var(--font-reading);
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 500;
+  line-height: .98;
+  letter-spacing: -.045em;
+}
+.welcome-sub { max-width: 44ch; color: var(--text-2); font-size: 17px; }
+.welcome-actions { margin-top: 16px; }
+.welcome-hint { color: var(--text-4); }
+
+.home { max-width: 1100px; margin-inline: auto; padding-top: 18px; gap: 52px; }
+.home-heading {
+  font-family: var(--font-reading);
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -.025em;
+}
+.continue-card {
+  grid-template-columns: 128px minmax(0, 1fr) auto;
+  padding: 24px;
+  background: var(--surface-1);
+  border-color: var(--border-2);
+  box-shadow: var(--shadow-2);
+}
+.continue-cover { border-radius: 8px; }
+.continue-title { font-family: var(--font-reading); font-size: 29px; font-weight: 500; }
+.continue-sub { color: var(--text-2); }
+.shelf-cover { border-radius: 7px; }
+.shelf-title { font-weight: 500; }
+
+.book-card { padding: 20px; background: var(--surface-1); }
+.book-overview-title { font-family: var(--font-reading); font-size: 20px; font-weight: 500; }
+.book-card-audiobook { border-top-color: var(--border-1); }
+#section-convert .card-header { padding-block: 17px; }
+#section-convert .card-title { font-family: var(--font-reading); font-size: 20px; font-weight: 500; }
+
+.chapters-list { gap: 6px; }
+.ch-row {
+  grid-template-columns: auto 3ch minmax(0, 1fr) minmax(0, auto) auto;
+  padding: 15px 16px;
+  border-radius: 10px;
+  background: hsl(236 17% 10% / .72);
+}
+.ch-row:hover { background: var(--surface-2); }
+.ch-title { font-size: 16px; font-weight: 500; }
+.ch-meta { color: var(--text-3); }
+.ch-num { font-family: var(--font-mono); color: var(--text-4); }
+.ch-badges { opacity: .82; }
+.selection-bar { border-radius: 10px; background: var(--surface-3); }
+
+.player {
+  min-height: var(--player-h);
+  padding: 10px 24px;
+  background: hsl(236 17% 10% / .98);
+  border-top-color: hsl(35 20% 90% / .12);
+  box-shadow: 0 -6px 24px hsl(0 0% 0% / .22);
+}
+.player-art { background: var(--surface-3); border: 1px solid var(--border-2); }
+.player-title { font-family: var(--font-reading); font-size: 17px; font-weight: 500; }
+#btn-play-pause { width: 38px; height: 38px; }
+.player-seek { background: var(--surface-4); }
+
+.modal-overlay { background: hsl(236 24% 4% / .88); backdrop-filter: blur(12px); }
+.modal-reader {
+  width: min(1280px, 100%);
+  height: min(92dvh, 980px);
+  border-color: var(--border-2);
+  background: var(--surface-1);
+}
+.reader-head { padding: 18px 24px 14px; }
+.reader-head h3 { font-family: var(--font-reading); font-size: 23px; font-weight: 500; }
+.reader-body {
+  padding: 42px clamp(20px, 7vw, 104px);
+  font-family: var(--font-reading);
+  font-size: 20px;
+  line-height: 1.78;
+  color: hsl(38 24% 88%);
+}
+.reader-body > * { max-width: 72ch; }
+.reader-para { padding: 8px 12px; margin-bottom: 12px; }
+.reader-para:hover { background: hsl(264 52% 67% / .07); }
+.reader-para-active { background: hsl(264 52% 67% / .13) !important; box-shadow: none; }
+.reader-panes { grid-template-columns: minmax(0, 1fr) 280px; }
+.listen-pane { background: hsl(236 18% 8%); }
+.listen-head { padding: 16px; }
+.listen-title { letter-spacing: .12em; color: var(--accent-text); }
+
+@media (max-width: 1000px) {
+  .content-scroll { padding-bottom: calc(var(--player-h) + 28px); }
+  .home { max-width: none; }
+}
+@media (max-width: 640px) {
+  :root { --header-h: 60px; --player-h: 56px; }
+  .shell-header { gap: 8px; padding-inline: 10px; }
+  .header-actions { gap: 4px; }
+  .header-actions .segmented { display: none; }
+  .console-trigger { padding-inline: 8px; }
+  .content-toolbar { padding: 10px 12px; }
+  .content-scroll { padding: 18px 12px calc(var(--player-h) + 22px); }
+  .welcome { padding: 24px 18px; }
+  .welcome-title { font-size: 43px; }
+  .welcome-actions { width: 100%; }
+  .welcome-actions .btn { flex: 1 1 100%; }
+  .home { gap: 34px; }
+  .continue-card { grid-template-columns: 72px minmax(0, 1fr); padding: 16px; }
+  .continue-title { font-size: 23px; }
+  .continue-actions { grid-column: 1 / -1; }
+  .continue-actions .btn { width: 100%; }
+  .ch-row { padding: 13px 12px; }
+  .player { padding: 8px 12px; }
+  .modal-reader { height: 100%; }
+  .reader-head { padding: 12px; }
+  .reader-body { padding: 24px 16px 90px; font-size: 19px; line-height: 1.72; }
+}
