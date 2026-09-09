@@ -35,8 +35,5 @@ ENV DATA_DIR=/app/data
 # Expose HTTP port
 EXPOSE 3000
 
-# Mount persistent data volume
-VOLUME ["/app/data"]
-
 # Start the unified backend and frontend server
 CMD ["node", "server/index.js"]
